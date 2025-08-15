@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vodafone Wordsearch — Rebuild from Scratch</title>
+<style>
+  :root{
+    --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
+    --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .container{max-width:1200px;margin:0 auto;padding:16px}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:40px;height:40px;border-radius:999px;background:var(--voda-red)}
+  .title{font-weight:900;font-size:22px}
+  .subtitle{color:var(--muted);font-size:13px}
+  .row{display:grid;grid-template-columns:1fr 420px;gap:16px}
+  @media (max-width:1080px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid #24262b;border-radius:14px}
+  .card-header{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+  .card-title{font-weight:800}
+  .card-content{padding:12px 14px 14px}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{appearance:none;border:1px solid #2a2c31;background:#1a1c20;color:#fff;cursor:pointer;padding:9px 12px;border-radius:12px;font-weight:800}
+  .btn-primary{background:var(--voda-red);border-color:var(--voda-red)}
+  .btn-ghost{background:#15171a}
+  .btn:disabled{opacity:.5;cursor:default}
+  .pill{padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid #2a2c31;background:#121317}
+  .grid-wrap{display:inline-block;padding:8px;border-radius:12px;border:1px solid #24262b;background:#0f1013}
+  .grid{display:grid;gap:0;user-select:none;touch-action:none;background:var(--grid)}
+  .cell{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+        font-weight:900;font-size:18px;color:#e9eaed;background:#101217;
+        border-right:1px solid #24262b;border-bottom:1px solid #24262b;cursor:pointer;
+        transition:background .08s,color .08s;}
+  .cell.top{border-top:1px solid #24262b}
+  .cell.sel{background:rgba(230,0,0,.22)}
+  .cell.hit, .slot.hit{background:rgba(22,163,74,.65)!important;color:#fff!important}
+  .cell.miss, .slot.miss{background:rgba(220,38,38,.65)!important;color:#fff!important}
+  .cell.found{background:var(--voda-red);color:#fff}
+  .list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .list li{padding:10px;border:1px solid #24262b;border-radius:12px;display:flex;justify-content:space-between;gap:12px;align-items:start;background:#0f1013}
+  .list li.found div{color:var(--muted);text-decoration:line-through}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .badge{font-size:10px;padding:2px 6px;border-radius:999px;border:1px solid #2a2c31}
+  .badge.found{background:#000;color:#fff;border-color:#000}
+  .badge.hidden{background:#15171a;color:#ddd}
+  .stack{display:grid;gap:8px}
+  .bank{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border:1px dashed #2a2c31;border-radius:10px;background:#0c0d10;min-height:56px}
+  .chip{min-width:44px;height:44px;border-radius:10px;border:1px solid #2a2c31;background:var(--chip);
+        display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px}
+  .chip[draggable=true]{cursor:grab}
+  .slots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .slot{width:56px;height:56px;border-radius:10px;border:2px dashed #2a2c31;background:#0b0c0f;
+        display:flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#6b7280}
+  .slot.fill{border-style:solid;color:#fff}
+  .slots.correct .slot{border-color:#16a34a;background:rgba(21,163,74,.1)}
+  .slots.wrong .slot{border-color:#dc2626;background:rgba(220,38,38,.08)}
+  .leader{display:grid;gap:8px}
+  .leader-row{display:flex;justify-content:space-between;align-items:center;padding:8px;border:1px solid #2a2c31;border-radius:10px;background:#0f1013}
+  .rank{font-weight:900;margin-right:6px}
+  .rank-1{color:#facc15}
+  .rank-2{color:#9ca3af}
+  .rank-3{color:#d97706}
+  /* Modal */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+  .modal{width:min(520px,95vw);background:#14161a;border:1px solid #2a2c31;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  .modal .head{padding:12px 14px;border-bottom:1px solid #222;color:#fff;font-weight:900}
+  .modal .body{padding:12px 14px;display:grid;gap:10px}
+  .modal .foot{padding:12px 14px;border-top:1px solid #222;display:flex;gap:8px;justify-content:flex-end}
+</style>
+</head>
+<body>
+<div id="qrPanel" style="position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:10px;border-radius:8px;box-shadow:0 0 10px rgba(0,0,0,0.2);text-align:center;">
+  <div id="qrcode"></div>
+  <div style="font-size:14px;color:#555;margin-top:4px;"></div>
+</div>
+
+</div>
+
+<div style="font-size:18px;color:#9aa0a6;margin-top:8px;"></div>
+</div>
+
+<div id="winnerBanner" style="display:none;background:#E60000;color:white;font-weight:900;font-size:20px;padding:12px;text-align:center;"></div>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">Vodafone Wordsearch</div>
+        <div class="subtitle">Multiplayer • Final Phrase: CSAANDLCA</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-ghost" id="btnShuffle">Shuffle</button>
+      <button class="btn btn-primary" id="btnStart">Start</button>
+      <button class="btn" id="btnStop">Stop</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnNewPlayer">Add Player</button>
+      <button class="btn" id="btnNewTeam">Add Team</button>
+      <span class="pill">Words left: <span id="hudLeft">0</span></span>
+      <span class="pill">Time: <span id="hudTimer">10:00</span></span>
+      <span class="pill">Quickest: <span id="hudBest">--:--</span></span>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Left column: grid + leader/teams/players -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Puzzle</div>
+      </div>
+      <div class="card-content">
+        <div style="margin-top:0;font-weight:900">Leaderboard</div>
+<div class="leader" id="leader"></div>
+<div style="margin-top:12px;font-weight:900">Teams</div>
+<div id="teamList" class="stack"></div>
+<div style="margin-top:12px;font-weight:900">Players</div>
+<div id="playerList" class="stack"></div>
+<div class="grid-wrap"><div id="grid" class="grid"></div></div>
+      </div>
+    </div>
+
+    <!-- Right column: final phrase + words & hints -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Info Panel</div>
+      </div>
+      <div class="card-content">
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:900;">Final Phrase</div>
+            <button class="btn btn-primary" id="btnClaimFinal" disabled>Claim Final Phrase</button>
+          </div>
+          <div style="font-weight:900;margin-top:8px">Letter Bank</div>
+          <div id="bank" class="bank"></div>
+          <div style="font-weight:900;margin:8px 0">Slots</div>
+          <div id="slotsWrap" class="slots"></div>
+        </div>
+
+        <div style="margin-top:12px;font-weight:900">Words to Find</div>
+        <ul id="wordList" class="list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for assigning found word / final phrase -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <div class="head">Assign Score</div>
+    <div class="body">
+      <div id="modalWord" style="font-weight:900;font-size:18px"></div>
+      <label>Assign to player</label>
+      <select id="modalPlayer" class="input"></select>
+    </div>
+    <div class="foot">
+      <button class="btn" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalAssign">Assign</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========================
+   Config / Data
+   ======================== */
+const GRID_SIZE = 12;
+const WORDS = [
+  {word:"CORE", hint:"Backbone of the network layer that sits beyond access"},
+  {word:"SITETRACKER", hint:"The deployment operations tool used for projects, milestones and dashboards."},
+  {word:"ALLOCATION", hint:"Which activity involves assigning specific responsibilities or resources to a deployment task?"},
+  {word:"NCT", hint:"System used by all regions to allocate sites to INOC (abbr.)."},
+  {word:"DELIVERY", hint:"What term describes the phase where circuits are provisioned, and a site is handed over for live service?"},
+  {word:"LCA", hint:"Which team is responsible for setting up pre-build, before a site goes live? (abbr.)"},
+  {word:"CRQ", hint:"Formal change request code used in delivery/go live processes (abbr.)."},
+  {word:"AUDIT", hint:"Essential Connectivity Services action to ensure accurate site data before deployment"}
+];
+const TARGET_PHRASE = "CSANDLCA";
+
+/* ========================
+   State
+   ======================== */
+const $ = id => document.getElementById(id);
+let board = []; // 2D cells {letter, found, teamId}
+let placedWords = []; // {word,cells:[{r,c}],foundByPlayerId,foundByTeamId}
+let selection = {active:false,start:null,end:null,cells:[]};
+let players = []; // {id,name,teamId,score}
+let teams = [];   // {id,name,color,score}
+let bankLetters = []; // letters unlocked (scrambled)
+let slotLetters = Array.from(TARGET_PHRASE, ch => ch===' ' ? ' ' : '');
+let foundWordPending = null;
+let finalSolved = null;
+
+// Timer & records
+let gameTimer = null;
+let timeRemaining = 600; // seconds
+let bestTimeSeconds = null;
+let roundActive = false;
+
+/* ========================
+   Utils
+   ======================== */
+const rand = n => Math.floor(Math.random()*n);
+const uid = () => Math.random().toString(36).slice(2,9);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function arraysEqual(a,b){return a.length===b.length && a.every((v,i)=>v.r===b[i].r && v.c===b[i].c);}
+function fmtTime(sec){ const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return `${m}:${s}`; }
+
+/* ========================
+   Board Generation
+   ======================== */
+function newBoard(){
+  board = Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:'',found:false,teamId:null})));
+  placedWords = [];
+  WORDS.forEach(w=>placeWord(w.word));
+  for(let r=0;r<GRID_SIZE;r++){
+    for(let c=0;c<GRID_SIZE;c++){
+      if(!board[r][c].letter) board[r][c].letter = String.fromCharCode(65+rand(26));
+    }
+  }
+  renderBoard(); renderWords(); updateHUD();
+}
+function placeWord(word){
+  const dirs = [[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
+  shuffle(dirs);
+  for(let attempt=0;attempt<800;attempt++){
+    const [dr,dc] = dirs[attempt%dirs.length];
+    const r0 = rand(GRID_SIZE), c0 = rand(GRID_SIZE);
+    const cells=[]; let ok=true;
+    for(let i=0;i<word.length;i++){
+      const r=r0+dr*i, c=c0+dc*i;
+      if(r<0||c<0||r>=GRID_SIZE||c>=GRID_SIZE){ok=false;break;}
+      const cell = board[r][c];
+      if(cell.letter && cell.letter!==word[i]){ok=false;break;}
+      cells.push({r,c});
+    }
+    if(ok){
+      cells.forEach((p,i)=>board[p.r][p.c].letter = word[i]);
+      placedWords.push({word, cells, foundByPlayerId:null, foundByTeamId:null});
+      return true;
+    }
+  }
+  return false;
+}
+
+/* ========================
+   Rendering
+   ======================== */
+function renderBoard(){
+  const g = $("grid");
+  g.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 44px)`;
+  g.innerHTML = "";
+  for(let r=0;r<GRID_SIZE;r++){
+    for(let c=0;c<GRID_SIZE;c++){
+      const d = document.createElement("div");
+      d.className = "cell"+(r===0?" top":"");
+      d.dataset.r=r; d.dataset.c=c;
+      d.textContent = board[r][c].letter;
+      if(board[r][c].found) d.classList.add("found");
+      g.appendChild(d);
+    }
+  }
+}
+function renderWords(){
+  const ul = $("wordList");
+  ul.innerHTML = "";
+  // sort: unfound first, then found
+  const sorted = [...placedWords].sort((a,b)=>{
+    const af = !!a.foundByPlayerId, bf = !!b.foundByPlayerId;
+    if(af!==bf) return af?1:-1; // unfound first
+    return a.word.localeCompare(b.word);
+  });
+  sorted.forEach(w=>{
+    const li = document.createElement("li");
+    if(w.foundByPlayerId) li.classList.add("found");
+    const left = document.createElement("div");
+    const right = document.createElement("div");
+    const info = WORDS.find(x=>x.word===w.word);
+    left.innerHTML = `<div style="font-weight:900">${w.word}</div><div class="hint">${info?.hint||""}</div>`;
+    right.innerHTML = `<span class="badge ${w.foundByPlayerId?'found':'hidden'}">${w.foundByPlayerId?'Found':'Hidden'}</span>`;
+    li.appendChild(left); li.appendChild(right);
+    ul.appendChild(li);
+  });
+}
+function renderPlayers(){
+  const c = $("playerList"); c.innerHTML="";
+  players.forEach(p=>{
+    const row = document.createElement("div");
+    row.className = "leader-row";
+    const team = teams.find(t=>t.id===p.teamId);
+    row.innerHTML = `<div>${p.name||'Unnamed Player'} <span style="color:${team?.color||'#9aa0a6'}">${team?.name||'No Team'}</span></div><div>${p.score}</div>`;
+    c.appendChild(row);
+  });
+}
+function renderTeams(){
+  const c = $("teamList"); c.innerHTML="";
+  teams.forEach(t=>{
+    const row = document.createElement("div");
+    row.className="leader-row";
+    row.innerHTML = `<div><span style="display:inline-block;width:10px;height:10px;background:${t.color};border-radius:999px;margin-right:8px"></span>${t.name||'Unnamed Team'}</div><div>${t.score}</div>`;
+    c.appendChild(row);
+  });
+}
+function renderLeader(){
+  const L = $("leader"); 
+  L.innerHTML="";
+  const ranking = [...players].sort((a,b)=>b.score-a.score);
+
+  if(ranking.length > 0){
+    const winnerRow = document.createElement("div");
+    winnerRow.className = "leader-row";
+    const topPlayer = ranking[0];
+    const topTeam = teams.find(t=>t.id===topPlayer.teamId);
+    winnerRow.innerHTML = `<div>🏆 Winner: ${topPlayer.name || 'Unnamed Player'} — ${topTeam?.name || 'No Team'}</div><div>${topPlayer.score}</div>`;
+    L.appendChild(winnerRow);
+  } else {
+    const none = document.createElement("div");
+    none.className="leader-row";
+    none.innerHTML = `<div>No teams yet 🏆</div><div>0</div>`;
+    L.appendChild(none);
+  }
+
+  ranking.forEach((p,i)=>{
+    const row = document.createElement("div");
+    row.className="leader-row";
+    const team = teams.find(t=>t.id===p.teamId);
+    let label = `<div><span class="rank rank-${i+1}">${i+1}</span> ${p.name || 'Unnamed Player'} — ${team?.name || 'No Team'}</div>`;
+    if(i===0) label += " 🏆";
+    row.innerHTML = `${label}<div>${p.score}</div>`;
+    L.appendChild(row);
+  });
+
+  if(teams.length){
+    const topTeamOverall = [...teams].sort((a,b)=>b.score-a.score)[0];
+    const teamRow = document.createElement("div"); 
+    teamRow.className="leader-row";
+    teamRow.innerHTML = `<div>${topTeamOverall.name} 🏆</div><div>${topTeamOverall.score}</div>`;
+    L.appendChild(teamRow);
+  }
+}
+function updateHUD(){
+  $("hudLeft").textContent = placedWords.filter(w=>!w.foundByPlayerId).length;
+  $("hudTimer").textContent = fmtTime(timeRemaining);
+  $("hudBest").textContent = bestTimeSeconds==null ? "--:--" : fmtTime(bestTimeSeconds);
+}
+
+/* ========================
+   Selection with flash
+   ======================== */
+function cellAt(ev){
+  const t = ev.target.closest(".cell"); if(!t) return null;
+  return {r:+t.dataset.r,c:+t.dataset.c,el:t};
+}
+function cellEl(r,c){ return document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
+function lineCells(sr,sc,er,ec){
+  const dr = Math.sign(er-sr), dc = Math.sign(ec-sc);
+  if(!(dr===0||dc===0||Math.abs(er-sr)===Math.abs(ec-sc))) return [];
+  const len = Math.max(Math.abs(er-sr),Math.abs(ec-sc))+1;
+  const cells=[];
+  for(let i=0;i<len;i++) cells.push({r:sr+i*dr,c:sc+i*dc});
+  return cells;
+}
+let selecting=false, start=null;
+function startSelection(ev){ const p=cellAt(ev); if(!p) return; selecting=true; start=p; selection.cells=[{r:p.r,c:p.c}]; highlightSelection(); }
+function moveSelection(ev){ if(!selecting) return; const p=cellAt(ev); if(!p) return; selection.cells=lineCells(start.r,start.c,p.r,p.c); highlightSelection(); }
+function endSelection(){
+  if(!selecting) return;
+  selecting=false;
+  const letters = selection.cells.map(p=>board[p.r][p.c].letter).join("");
+  const rev = letters.split("").reverse().join("");
+  const match = placedWords.find(w=>!w.foundByPlayerId && (w.word===letters || w.word===rev || arraysEqual(selection.cells,w.cells) || arraysEqual(selection.cells.slice().reverse(), w.cells)));
+  if(match){
+    flashSelection("hit");
+    setTimeout(()=>{ foundWordPending = match; openWordModal(match.word); }, 420);
+  }else{
+    flashSelection("miss");
+  }
+  document.querySelectorAll(".cell.sel").forEach(el=>el.classList.remove("sel"));
+  selection={active:false,start:null,end:null,cells:[]};
+}
+function highlightSelection(){ document.querySelectorAll(".cell.sel").forEach(el=>el.classList.remove("sel")); selection.cells.forEach(p=>cellEl(p.r,p.c)?.classList.add("sel")); }
+function flashSelection(kind){ selection.cells.forEach(p=>{const el=cellEl(p.r,p.c); el.classList.add(kind); setTimeout(()=>el.classList.remove(kind),420);}); }
+
+/* ========================
+   Modal
+   ======================== */
+function openWordModal(word){
+  if(players.length===0){
+    alert("Add at least one player first to assign the score.");
+    return;
+  }
+  $("modalWord").textContent = "WORD: "+word;
+  const sel = $("modalPlayer"); sel.innerHTML="";
+  players.forEach(p=>{
+    const opt=document.createElement("option");
+    const team = teams.find(t=>t.id===p.teamId);
+    opt.value = p.id; opt.textContent = `${p.name||'Unnamed Player'} (${team?.name||'No Team'})`;
+    sel.appendChild(opt);
+  });
+  $("modalBackdrop").style.display="flex";
+  $("modalAssign").onclick = assignPendingWord;
+}
+function closeModal(){ $("modalBackdrop").style.display="none"; }
+$("modalCancel").onclick = closeModal;
+
+function assignPendingWord(){
+  if(!foundWordPending) return closeModal();
+  const playerId = $("modalPlayer").value || null;
+  const teamId = players.find(p=>p.id===playerId)?.teamId ?? null;
+  // mark found
+  foundWordPending.cells.forEach(({r,c})=>{
+    board[r][c].found = true;
+    board[r][c].teamId = teamId;
+  });
+  foundWordPending.foundByPlayerId = playerId;
+  foundWordPending.foundByTeamId = teamId;
+  // scoring
+  const pts = foundWordPending.word.length;
+  const player = players.find(p=>p.id===playerId); if(player) player.score += pts;
+  const team = teams.find(t=>t.id===teamId); if(team) team.score += pts;
+  // unlock first letter into bank (scrambled)
+  const ch = foundWordPending.word[0];
+  bankLetters.push(ch); shuffle(bankLetters);
+  foundWordPending = null;
+  renderBoard(); renderWords(); renderPlayers(); renderTeams(); renderLeader();
+  renderLetterBank(); updateClaimButton(); updateHUD();
+  closeModal();
+  checkGameStatus();
+}
+
+/* ========================
+   Final phrase (drag/drop)
+   ======================== */
+function renderLetterBank(){
+  const bank = $("bank"); bank.innerHTML="";
+  bankLetters.forEach((ch,i)=>{
+    const d = document.createElement("div");
+    d.className="chip"; d.draggable=true; d.textContent=ch;
+    d.addEventListener("dragstart", e=>{ e.dataTransfer.setData("text/plain","bank:"+i); });
+    bank.appendChild(d);
+  });
+}
+function renderSlots(){
+  const wrap = $("slotsWrap"); wrap.innerHTML="";
+  Array.from(TARGET_PHRASE).forEach((ch,i)=>{
+    const slot = document.createElement("div");
+    slot.className="slot"+(slotLetters[i]?" fill":"");
+    slot.dataset.index=i;
+    slot.textContent = slotLetters[i]||"";
+    slot.addEventListener("dragover", e=>e.preventDefault());
+    slot.addEventListener("drop", e=>{
+      e.preventDefault();
+      const data = e.dataTransfer.getData("text/plain"); if(!data) return;
+      if(data.startsWith("bank:")){
+        const idx = +data.split(":")[1]; const ch = bankLetters[idx]; if(!ch) return;
+        slotLetters[i] = ch; bankLetters.splice(idx,1);
+        renderSlots(); renderLetterBank(); updateClaimButton();
+      }else if(data.startsWith("slot:")){
+        const from = +data.split(":")[1];
+        const tmp = slotLetters[from]; slotLetters[from] = slotLetters[i]; slotLetters[i] = tmp;
+        renderSlots(); updateClaimButton();
+      }
+    });
+    slot.draggable = !!slotLetters[i];
+    slot.addEventListener("dragstart", e=>{ e.dataTransfer.setData("text/plain","slot:"+i); });
+    wrap.appendChild(slot);
+  });
+}
+function updateClaimButton(){
+  const haveAll = slotLetters.length===TARGET_PHRASE.length && slotLetters.every((ch,i)=>!!ch || TARGET_PHRASE[i]===' ');
+  $("btnClaimFinal").disabled = !haveAll || !!finalSolved;
+}
+
+document.getElementById("btnClaimFinal").onclick = ()=>{
+  if(finalSolved) return;
+  const slots = document.querySelectorAll("#slotsWrap .slot");
+  slots.forEach((s,i)=>{
+    const correct = TARGET_PHRASE[i];
+    const val = slotLetters[i];
+    if(val===correct){ s.classList.add("hit"); setTimeout(()=>s.classList.remove("hit"),420); }
+    else{ s.classList.add("miss"); setTimeout(()=>s.classList.remove("miss"),420); }
+  });
+  setTimeout(()=>{
+    if(players.length===0){ alert("Add at least one player first to assign the score."); return; }
+    $("modalWord").textContent = `FINAL PHRASE: ${TARGET_PHRASE}`;
+    const sel = $("modalPlayer"); sel.innerHTML="";
+    players.forEach(p=>{
+      const opt = document.createElement("option");
+      const team = teams.find(t=>t.id===p.teamId);
+      opt.value = p.id; opt.textContent = `${p.name||'Unnamed Player'} (${team?.name||'No Team'})`;
+      sel.appendChild(opt);
+    });
+    $("modalBackdrop").style.display="flex";
+    const orig = $("modalAssign").onclick;
+    $("modalAssign").onclick = ()=>{
+      const attempt = slotLetters.join("");
+      const ok = attempt === TARGET_PHRASE;
+      const playerId = $("modalPlayer").value || null;
+      const teamId = players.find(p=>p.id===playerId)?.teamId ?? null;
+      if(ok){
+        finalSolved = { byPlayerId: playerId, byTeamId: teamId };
+        const player = players.find(p=>p.id===playerId); if(player) player.score += 20;
+        const team = teams.find(t=>t.id===teamId); if(team) team.score += 20;
+        $("slotsWrap").classList.add("correct");
+      }else{
+        $("slotsWrap").classList.add("wrong");
+        setTimeout(()=>$("slotsWrap").classList.remove("wrong"), 600);
+      }
+      renderPlayers(); renderTeams(); renderLeader();
+      updateClaimButton();
+      closeModal();
+      $("modalAssign").onclick = orig;
+      checkGameStatus();
+    };
+    $("modalCancel").onclick = ()=>{ closeModal(); $("modalAssign").onclick = orig; };
+  }, 420);
+};
+
+/* ========================
+   Players & Teams
+   ======================== */
+function addTeam(){
+  const name = prompt("Team name:");
+  if(!name) return;
+  const color = prompt("Team colour (hex or name):", "#"+Math.random().toString(16).slice(2,8));
+  teams.push({id:uid(), name, color: color||"#E60000", score:0});
+  renderTeams(); renderLeader();
+}
+function addPlayer(){
+  const name = prompt("Player name:");
+  if(!name) return;
+  // Default to No Team
+  const teamId = null;
+  players.push({id:uid(), name, teamId, score:0});
+  renderPlayers(); renderLeader();
+}
+
+/* ========================
+   Timer / Controls
+   ======================== */
+function startTimer(){
+  clearInterval(gameTimer);
+  timeRemaining = 600;
+  roundActive = true;
+  updateHUD();
+  gameTimer = setInterval(()=>{
+    timeRemaining--;
+    $("hudTimer").textContent = fmtTime(timeRemaining);
+    if(timeRemaining <= 0){
+      clearInterval(gameTimer);
+      roundActive = false;
+      alert("⏱ Time's up!");
+    }
+  }, 1000);
+}
+function stopTimer(){
+  if(!roundActive) return;
+  clearInterval(gameTimer);
+  roundActive = false;
+  if(allObjectivesDone()){
+    maybeRecordBest(timeRemaining);
+    alert(`🛑 Stopped. Time to finish: ${fmtTime(600 - timeRemaining)}. Best: ${$("hudBest").textContent}`);
+  }else{
+    alert("🛑 Stopped. Round not finished yet.");
+  }
+}
+function resetRound(){
+  document.getElementById("winnerBanner").style.display="none";
+  clearInterval(gameTimer);
+  roundActive = false;
+  timeRemaining = 600;
+  // reset board & state but keep best record
+  bankLetters = [];
+  slotLetters = Array.from(TARGET_PHRASE, ch => ch===' ' ? ' ' : '');
+  finalSolved = null;
+  players.forEach(p=>p.score=0);
+  teams.forEach(t=>t.score=0);
+  newBoard();
+  renderLetterBank(); renderSlots();
+  renderPlayers(); renderTeams(); renderLeader(); renderWords();
+  updateHUD();
+}
+function maybeRecordBest(remain){
+  // remain is seconds left at time of completion; elapsed = 600 - remain
+  const elapsed = 600 - remain;
+  if(bestTimeSeconds==null || elapsed < bestTimeSeconds){
+    bestTimeSeconds = elapsed;
+    $("hudBest").textContent = fmtTime(bestTimeSeconds);
+  }
+}
+
+/* ========================
+   End / Winner detection
+   ======================== */
+function allObjectivesDone(){
+  return placedWords.every(w=>!!w.foundByPlayerId) && !!finalSolved;
+}
+function checkGameStatus(){
+  if(allObjectivesDone()){
+    clearInterval(gameTimer);
+    roundActive = false;
+    maybeRecordBest(timeRemaining);
+    const topPlayer = [...players].sort((a,b)=>b.score-a.score)[0];
+    const topTeam = [...teams].sort((a,b)=>b.score-a.score)[0];
+    
+    // Show winner banner
+    const banner = document.getElementById("winnerBanner");
+    banner.style.display = "block";
+    banner.textContent = `🏆 Player: ${topPlayer?.name||'n/a'} (${topPlayer?.score||0} pts) — Team: ${topTeam?.name||'n/a'} (${topTeam?.score||0} pts)`;
+    alert(`🏁 Finished in ${fmtTime(600 - timeRemaining)}\nTop Player: ${topPlayer?.name||'n/a'} (${topPlayer?.score||0})\nTop Team: ${topTeam?.name||'n/a'} (${topTeam?.score||0})`);
+  }
+}
+
+/* ========================
+   Wiring & Init
+   ======================== */
+$("btnNewTeam").onclick = addTeam;
+$("btnNewPlayer").onclick = addPlayer;
+$("btnShuffle").onclick = ()=>{ newBoard(); };
+$("btnStart").onclick = ()=>{ startTimer(); };
+$("btnStop").onclick = ()=>{ stopTimer(); };
+$("btnReset").onclick = ()=>{ resetRound(); };
+
+// Grid events
+$("grid").addEventListener("mousedown", startSelection);
+$("grid").addEventListener("mousemove", moveSelection);
+window.addEventListener("mouseup", endSelection);
+$("grid").addEventListener("touchstart", e=>{ e.preventDefault(); startSelection(e.touches[0]); }, {passive:false});
+$("grid").addEventListener("touchmove", e=>{ e.preventDefault(); moveSelection(e.touches[0]); }, {passive:false});
+window.addEventListener("touchend", e=>{ endSelection(); });
+
+function boot(){
+  newBoard();
+  renderSlots();
+  renderLetterBank();
+  renderPlayers(); renderTeams(); renderLeader();
+  updateHUD(); updateClaimButton();
+}
+boot();
+</script>
+
+
+
+
+<script>
+(function(){
+  function QR8bitByte(data){this.mode=1;this.data=data;this.parsedData=[];for(var i=0,l=this.data.length;i<l;i++){var byte=this.data.charCodeAt(i);this.parsedData.push(byte>0xff?0x3f:byte)}};
+  var qr=new QRCode(window.location.href,1);
+  var el=document.getElementById("qrcodeCanvas");
+  if(el){
+    var ctx=el.getContext("2d");
+    var size=350;
+    var count=qr.getModuleCount();
+    var cellSize=(size-40)/count; // quiet zone
+    ctx.fillStyle="#fff"; ctx.fillRect(0,0,size,size);
+    for(var r=0;r<count;r++){
+      for(var c2=0;c2<count;c2++){
+        ctx.fillStyle=qr.isDark(r,c2) ? "#E60000" : "#fff";
+        ctx.fillRect(20 + c2*cellSize, 20 + r*cellSize, cellSize, cellSize);
+      }
+    }
+  }
+})();
+</script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    new QRCode(document.getElementById("qrcode"), {
+        text: "https://saturncapricornsquid.github.io/CSANDLCA/",
+        width: 100,
+        height: 100,
+        colorDark : "#E60000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+});
+</script>
+
+</body>
+</html>
