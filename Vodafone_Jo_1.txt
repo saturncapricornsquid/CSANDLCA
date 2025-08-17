@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vodafone Wordsearch — Multiplayer Teams</title>
+<style>
+  :root{
+    --vf-red:#E60000;
+    --vf-dark:#14161a;
+    --vf-muted:#9aa0a6;
+  }
+  body{margin:0;font-family:Inter,Arial,sans-serif;background:#0c0d10;color:#fff}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:#14161a}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:36px;height:36px;border-radius:50%;background:var(--vf-red)}
+  .title{font-weight:900;font-size:20px}
+  .subtitle{font-size:13px;color:var(--vf-muted)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{padding:6px 12px;border-radius:8px;border:1px solid #333;background:#222;color:#fff;cursor:pointer;font-weight:700}
+  .btn-primary{background:var(--vf-red);border-color:var(--vf-red)}
+  .pill{padding:4px 10px;border-radius:999px;background:#1a1c20;border:1px solid #333;font-size:12px}
+  .row{display:grid;grid-template-columns:1fr 350px;gap:16px;padding:16px}
+  @media(max-width:900px){.row{grid-template-columns:1fr}}
+  .card{background:#14161a;border:1px solid #2a2c31;border-radius:12px}
+  .card-header{padding:10px 14px;border-bottom:1px solid #222;font-weight:800}
+  .card-content{padding:14px}
+  .grid{display:grid;gap:0;user-select:none}
+  .cell{width:48px;height:48px;display:flex;align-items:center;justify-content:center;
+        font-weight:900;font-size:18px;border:1px solid #2a2c31;background:#101217;cursor:pointer}
+  .cell.sel{background:rgba(230,0,0,.3)}
+  .cell.found{background:var(--vf-red);color:#fff}
+  .list{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+  .list li{padding:8px;border:1px solid #2a2c31;border-radius:10px;background:#0f1013}
+  .list li.found{opacity:.5;text-decoration:line-through}
+  .hint{font-size:12px;color:var(--vf-muted);margin-top:4px}
+  .leader-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;
+              border:1px solid #2a2c31;border-radius:8px;background:#0f1013;margin-top:4px}
+  .bank{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border:1px dashed #444;border-radius:8px;min-height:50px}
+  .chip{min-width:40px;height:40px;border-radius:8px;border:1px solid #333;background:#1f2226;
+        display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:#fff;cursor:grab}
+  .slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .slot{width:48px;height:48px;border:2px dashed #444;border-radius:8px;display:flex;
+        align-items:center;justify-content:center;font-weight:900;font-size:20px;color:#666}
+  .slot.fill{border-style:solid;color:#fff;background:#222}
+  #winnerBanner{display:none;background:var(--vf-red);padding:10px;color:#fff;font-weight:900;text-align:center}
+  #qrPanel{position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:10px;border-radius:8px;text-align:center}
+</style>
+</head>
+<body>
+<div id="qrPanel">
+  <div id="qrcode"></div>
+  <div style="font-size:13px;color:#333;margin-top:4px;">Scan to Join</div>
+</div>
+
+<div id="winnerBanner"></div>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo"></div>
+    <div>
+      <div class="title">Vodafone Wordsearch</div>
+      <div class="subtitle">Multiplayer • Final Phrase: CSANDLCATEAM</div>
+    </div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-ghost" id="btnShuffle">Shuffle</button>
+    <button class="btn btn-primary" id="btnStart">Start</button>
+    <button class="btn" id="btnStop">Stop</button>
+    <button class="btn" id="btnReset">Reset</button>
+    <button class="btn" id="btnNewPlayer">Add Player</button>
+    <button class="btn" id="btnNewTeam">Add Team</button>
+    <span class="pill">Words left: <span id="hudLeft">0</span></span>
+    <span class="pill">Time: <span id="hudTimer">10:00</span></span>
+  </div>
+</div>
+
+<div class="row">
+  <div class="card">
+    <div class="card-header">Leaderboard / Teams / Players</div>
+    <div class="card-content">
+      <div id="leader"></div>
+      <div style="margin-top:12px;font-weight:900">Teams</div>
+      <div id="teamList"></div>
+      <div style="margin-top:12px;font-weight:900">Players</div>
+      <div id="playerList"></div>
+      <div style="margin-top:12px;font-weight:900">Grid</div>
+      <div id="grid" class="grid"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">Info Panel</div>
+    <div class="card-content">
+      <div style="font-weight:900">Final Phrase</div>
+      <div class="bank" id="bank"></div>
+      <div class="slots" id="slotsWrap"></div>
+      <div style="margin-top:12px;font-weight:900">Words to Find</div>
+      <ul id="wordList" class="list"></ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* Config */
+const GRID_SIZE=12;
+const WORDS=[
+ {word:"CORE",hint:"Backbone of the network layer that sits beyond access"},
+ {word:"SITETRACKER",hint:"Deployment operations tool used for milestones & dashboards"},
+ {word:"ALLOCATION",hint:"Assigning responsibilities/resources to a task"},
+ {word:"NCT",hint:"System used by all regions to allocate sites (abbr.)"},
+ {word:"DELIVERY",hint:"Phase where circuits are provisioned & site handed over"},
+ {word:"LCA",hint:"Team responsible for pre-build before go live (abbr.)"},
+ {word:"CRQ",hint:"Formal change request code in delivery/go live (abbr.)"},
+ {word:"AUDIT",hint:"Check to ensure accurate site data before deployment"},
+ {word:"TESTING",hint:"Process of verifying a new configuration before deployment"},
+ {word:"ESCALATION",hint:"Raising a fault/issue to higher-level support"},
+ {word:"ACHIEVEMENT",hint:"A successful delivery milestone"},
+ {word:"METRIC",hint:"Performance indicators used to track rollout/faults/uptime"}
+];
+const TARGET_PHRASE="CSANDLCATEAM";
+
+/* Simple QR update */
+function updateQR(seed){
+  document.getElementById("qrcode").innerHTML="";
+  new QRCode(document.getElementById("qrcode"),{
+    text:"https://saturncapricornsquid.github.io/vodafone-wordsearch/?seed="+seed,
+    width:150,height:150,colorDark:"#E60000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.H
+  });
+}
+updateQR(Date.now());
+
+/* --- Build dummy grid just to show --- */
+function renderBoard(){
+  const g=document.getElementById("grid");
+  g.style.gridTemplateColumns=`repeat(${GRID_SIZE},48px)`;
+  g.innerHTML="";
+  for(let r=0;r<GRID_SIZE;r++){
+    for(let c=0;c<GRID_SIZE;c++){
+      const d=document.createElement("div");
+      d.className="cell";d.textContent=String.fromCharCode(65+Math.floor(Math.random()*26));
+      g.appendChild(d);
+    }
+  }
+}
+renderBoard();
+</script>
+</body>
+</html>
