@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vodafone Wordsearch — Multiplayer</title>
+<style>
+  :root {
+    --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
+    --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+       background:var(--bg);color:#fff;}
+  .container{max-width:1200px;margin:0 auto;padding:16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
+  .title{font-weight:900;font-size:22px}
+  .subtitle{font-size:13px;color:var(--muted)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{padding:8px 14px;border-radius:10px;border:1px solid #2a2c31;background:#15171a;color:#fff;cursor:pointer;font-weight:700}
+  .btn-primary{background:var(--voda-red);border-color:var(--voda-red)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .pill{background:#121317;padding:6px 10px;border-radius:999px;font-size:13px}
+  .row{display:grid;grid-template-columns:1fr 400px;gap:16px}
+  @media(max-width:1080px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid #24262b;border-radius:12px}
+  .card-header{padding:10px 14px;font-weight:800;border-bottom:1px solid #24262b}
+  .card-content{padding:12px 14px}
+  .grid-wrap{padding:6px;background:#0f1013;border-radius:12px}
+  .grid{display:grid;user-select:none}
+  .cell{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-weight:900;
+        border:1px solid #24262b;cursor:pointer}
+  .cell.sel{background:rgba(230,0,0,0.3)}
+  .cell.found{background:var(--voda-red);color:#fff}
+  .list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+  .list li{padding:8px;border-radius:8px;background:#0f1013;border:1px solid #2a2c31}
+  .list li.found{opacity:.6;text-decoration:line-through}
+  .hint{font-size:12px;color:var(--muted)}
+  .bank{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px dashed #2a2c31;border-radius:8px}
+  .chip{width:40px;height:40px;border-radius:8px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px}
+  .chip[draggable=true]{cursor:grab}
+  .slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .slot{width:46px;height:46px;border:2px dashed #2a2c31;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666}
+  .slot.fill{border-style:solid;color:#fff}
+  .leader-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013}
+  #winnerBanner{display:none;background:var(--voda-red);padding:10px;font-size:18px;font-weight:900;text-align:center;margin-bottom:12px}
+  #qrPanel{position:fixed;top:10px;left:10px;background:#fff;padding:10px;border-radius:8px;text-align:center}
+</style>
+</head>
+<body>
+<div id="qrPanel">
+  <div id="qrcode"></div>
+  <div style="font-size:14px;color:#333;margin-top:4px;">Scan to Join</div>
+</div>
+
+<div class="container">
+  <div id="winnerBanner"></div>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">Vodafone Wordsearch</div>
+        <div class="subtitle">Multiplayer • Final Phrase: CSANDLCATEAM</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="btnShuffle">Shuffle</button>
+      <button class="btn btn-primary" id="btnStart">Start</button>
+      <button class="btn" id="btnStop">Stop</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnNewPlayer">Add Player</button>
+      <button class="btn" id="btnNewTeam">Add Team</button>
+      <span class="pill">Words left: <span id="hudLeft">0</span></span>
+      <span class="pill">Time: <span id="hudTimer">10:00</span></span>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="card">
+      <div class="card-header">Puzzle & Leaderboard</div>
+      <div class="card-content">
+        <div id="leader"></div>
+        <div style="margin:8px 0;font-weight:900">Teams</div>
+        <div id="teamList"></div>
+        <div style="margin:8px 0;font-weight:900">Players</div>
+        <div id="playerList"></div>
+        <div class="grid-wrap"><div id="grid" class="grid"></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Info Panel</div>
+      <div class="card-content">
+        <div style="font-weight:900">Final Phrase</div>
+        <div id="bank" class="bank"></div>
+        <div id="slotsWrap" class="slots"></div>
+        <div style="margin-top:12px;font-weight:900">Words to Find</div>
+        <ul id="wordList" class="list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ========================
+   CONFIG
+   ======================== */
+const GRID_SIZE = 12;
+const WORDS = [
+  {word:"CORE", hint:"Backbone of the network layer that sits beyond access"},
+  {word:"SITETRACKER", hint:"The deployment operations tool used for projects, milestones and dashboards."},
+  {word:"ALLOCATION", hint:"Assigning specific responsibilities or resources to a task"},
+  {word:"NCT", hint:"System used by all regions to allocate sites to INOC (abbr.)"},
+  {word:"DELIVERY", hint:"Phase where circuits are provisioned, site handed over for service"},
+  {word:"LCA", hint:"Team responsible for pre-build before go-live (abbr.)"},
+  {word:"CRQ", hint:"Formal change request code used in go live processes"},
+  {word:"AUDIT", hint:"Connectivity Services action to ensure accurate site data"},
+  // New TEAM words
+  {word:"TESTING", hint:"Verifying new config/service behaves as expected before deployment"},
+  {word:"ESCALATION", hint:"Act of raising a fault or issue to higher support or management"},
+  {word:"ACHIEVEMENT", hint:"Successful delivery milestone or critical resolution"},
+  {word:"METRIC", hint:"Performance indicators tracking rollout, faults, or uptime"}
+];
+const TARGET_PHRASE = "CSANDLCATEAM";
+
+/* ========================
+   STATE
+   ======================== */
+let board=[], placedWords=[], bankLetters=[], slotLetters=[];
+let players=[], teams=[];
+let qr;
+
+/* ========================
+   HELPERS
+   ======================== */
+function rand(n){return Math.floor(Math.random()*n);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+/* ========================
+   BOARD
+   ======================== */
+function newBoard(){
+  board=Array.from({length:GRID_SIZE},()=>Array.from({length:GRID_SIZE},()=>({letter:""})));
+  placedWords=[];
+  WORDS.forEach(w=>placeWord(w.word));
+  for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++)if(!board[r][c].letter)board[r][c].letter=String.fromCharCode(65+rand(26));
+  renderBoard(); renderWords();
+  updateQR();
+}
+function placeWord(word){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1],[-1,0],[0,-1],[-1,-1],[-1,1]];
+  for(let attempt=0;attempt<200;attempt++){
+    const [dr,dc]=dirs[rand(dirs.length)];
+    const r0=rand(GRID_SIZE),c0=rand(GRID_SIZE);let ok=true,cells=[];
+    for(let i=0;i<word.length;i++){const r=r0+dr*i,c=c0+dc*i;if(r<0||c<0||r>=GRID_SIZE||c>=GRID_SIZE){ok=false;break;}if(board[r][c].letter&&board[r][c].letter!==word[i]){ok=false;break;}cells.push({r,c});}
+    if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]);placedWords.push({word,cells});return;}
+  }
+}
+function renderBoard(){
+  const g=document.getElementById("grid");
+  g.style.gridTemplateColumns=`repeat(${GRID_SIZE},42px)`;
+  g.innerHTML="";
+  for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++){const d=document.createElement("div");d.className="cell";d.textContent=board[r][c].letter;g.appendChild(d);}
+}
+function renderWords(){
+  const ul=document.getElementById("wordList");ul.innerHTML="";
+  WORDS.forEach(w=>{const li=document.createElement("li");li.innerHTML=`<div style="font-weight:900">${w.word}</div><div class="hint">${w.hint}</div>`;ul.appendChild(li);});
+}
+
+/* ========================
+   QR
+   ======================== */
+function updateQR(){
+  document.getElementById("qrcode").innerHTML="";
+  qr=new QRCode(document.getElementById("qrcode"),{
+    text:window.location.href+"?seed="+Math.floor(Math.random()*100000),
+    width:120,height:120,
+    colorDark:"#E60000",colorLight:"#ffffff"
+  });
+}
+
+/* ========================
+   INIT
+   ======================== */
+document.getElementById("btnShuffle").onclick=newBoard;
+newBoard();
+</script>
+</body>
+</html>
