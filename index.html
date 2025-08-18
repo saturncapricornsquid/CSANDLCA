@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vodafone Wordsearch</title>
+<style>
+  :root{
+    --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
+    --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:#fff;
+            font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .container{max-width:1200px;margin:0 auto;padding:12px}
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+          flex-wrap:wrap;gap:12px;margin-bottom:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
+  .title{font-weight:900;font-size:22px}
+  .subtitle{color:var(--muted);font-size:13px}
+  .qrbox{text-align:center}
+  #qrcode{width:100px;height:100px}
+  .qrtext{font-size:12px;color:var(--muted);margin-top:2px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer;
+       background:#1a1c20;border:1px solid #2a2c31;color:#fff}
+  .btn-primary{background:var(--voda-red);border-color:var(--voda-red)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .pill{padding:6px 10px;border-radius:999px;font-size:12px;border:1px solid #2a2c31;background:#121317}
+  .row{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  @media(max-width:900px){.row{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid #24262b;border-radius:14px}
+  .card-header{padding:12px 14px;font-weight:800}
+  .card-content{padding:12px 14px}
+  .grid-wrap{display:inline-block;padding:8px;border-radius:12px;border:1px solid #24262b;background:#0f1013}
+  .grid{display:grid;gap:0;user-select:none;touch-action:none;background:var(--grid)}
+  .cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+        font-weight:700;font-size:16px;color:#e9eaed;background:#101217;
+        border-right:1px solid #24262b;border-bottom:1px solid #24262b;cursor:pointer}
+  .cell.found{background:var(--voda-red);color:#fff}
+  .cell.sel{background:rgba(230,0,0,.22)}
+  .cell.hit{background:rgba(22,163,74,.6)!important}
+  .cell.miss{background:rgba(220,38,38,.6)!important}
+  .list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .list li{padding:10px;border:1px solid #2a2c31;border-radius:12px;background:#0f1013}
+  .list li.found div{color:var(--muted);text-decoration:line-through}
+  .hint{font-size:12px;color:var(--muted);margin-top:4px}
+  .leader{display:grid;gap:8px}
+  .leader-row{display:flex;justify-content:space-between;align-items:center;
+              padding:8px;border:1px solid #2a2c31;border-radius:10px;background:#0f1013}
+  .bank,.slots{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .chip{width:40px;height:40px;border-radius:10px;background:var(--chip);
+        display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px}
+  .slot{width:48px;height:48px;border-radius:10px;border:2px dashed #2a2c31;
+        display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280}
+  .slot.fill{border-style:solid;color:#fff}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <div class="title">Vodafone Wordsearch</div>
+        <div class="subtitle">Multiplayer</div>
+      </div>
+    </div>
+    <div class="qrbox">
+      <div id="qrcode"></div>
+      <div class="qrtext">📱 Scan Me</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-ghost" id="btnShuffle">Shuffle</button>
+      <button class="btn btn-primary" id="btnStart">Start</button>
+      <button class="btn" id="btnStop">Stop</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnNewPlayer">Add Player</button>
+      <button class="btn" id="btnNewTeam">Add Team</button>
+      <span class="pill">Words left: <span id="hudLeft">0</span></span>
+      <span class="pill">Time: <span id="hudTimer">10:00</span></span>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Left: puzzle + leaderboard -->
+    <div class="card">
+      <div class="card-header">Puzzle</div>
+      <div class="card-content">
+        <div style="font-weight:900;margin-bottom:8px">Leaderboard</div>
+        <div id="leader" class="leader"></div>
+        <div style="margin:12px 0;font-weight:900">Teams</div>
+        <div id="teamList" class="leader"></div>
+        <div style="margin:12px 0;font-weight:900">Players</div>
+        <div id="playerList" class="leader"></div>
+        <div class="grid-wrap"><div id="grid" class="grid"></div></div>
+      </div>
+    </div>
+
+    <!-- Right: final phrase + word list -->
+    <div class="card">
+      <div class="card-header">Info Panel</div>
+      <div class="card-content">
+        <div style="margin-bottom:16px;">
+          <div style="font-weight:900;">Final Phrase</div>
+          <div style="margin-top:8px;font-weight:900">Letter Bank</div>
+          <div id="bank" class="bank"></div>
+          <div style="margin:8px 0;font-weight:900">Slots</div>
+          <div id="slotsWrap" class="slots"></div>
+        </div>
+        <div style="margin-top:12px;font-weight:900">Words to Find</div>
+        <ul id="wordList" class="list"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// Init QR
+function renderQR(){
+  const qrDiv=document.getElementById("qrcode");
+  qrDiv.innerHTML="";
+  new QRCode(qrDiv,{
+    text: window.location.href,
+    width:100,
+    height:100,
+    colorDark:"#E60000",
+    colorLight:"#ffffff",
+    correctLevel:QRCode.CorrectLevel.H
+  });
+}
+renderQR();
+
+/* ==== Game Config ==== */
+const GRID_SIZE=15;
+const WORDS=[
+ {word:"CORE", hint:"Backbone of the network layer"},
+ {word:"SITETRACKER", hint:"Deployment operations tool"},
+ {word:"ALLOCATION", hint:"Assigning resources to tasks"},
+ {word:"NCT", hint:"System to allocate sites to INOC"},
+ {word:"DELIVERY", hint:"Phase where circuits go live"},
+ {word:"LCA", hint:"Team for pre-build setup"},
+ {word:"CRQ", hint:"Formal change request code"},
+ {word:"AUDIT", hint:"Action to ensure accurate site data"},
+ {word:"TEAM", hint:"Group working together toward success"}
+];
+const TARGET_PHRASE="CSANDLCA";
+
+/* ==== State ==== */
+let board=[],placedWords=[];
+const $=id=>document.getElementById(id);
+let timeRemaining=600,gameTimer=null;
+
+/* ==== Utils ==== */
+const rand=n=>Math.floor(Math.random()*n);
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,"0"),s=String(sec%60).padStart(2,"0");return `${m}:${s}`}
+
+/* ==== Board ==== */
+function newBoard(){
+  board=Array.from({length:GRID_SIZE},()=>Array.from({length:GRID_SIZE},()=>({letter:"",found:false})));
+  placedWords=[];
+  WORDS.forEach(w=>placeWord(w.word));
+  for(let r=0;r<GRID_SIZE;r++){for(let c=0;c<GRID_SIZE;c++){if(!board[r][c].letter)board[r][c].letter=String.fromCharCode(65+rand(26));}}
+  renderBoard(); renderWords(); updateHUD();
+}
+function placeWord(word){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let attempt=0;attempt<300;attempt++){
+    const [dr,dc]=dirs[rand(dirs.length)];
+    const r0=rand(GRID_SIZE),c0=rand(GRID_SIZE);
+    const cells=[];let ok=true;
+    for(let i=0;i<word.length;i++){
+      const r=r0+dr*i,c=c0+dc*i;
+      if(r<0||c<0||r>=GRID_SIZE||c>=GRID_SIZE){ok=false;break;}
+      if(board[r][c].letter && board[r][c].letter!==word[i]){ok=false;break;}
+      cells.push({r,c});
+    }
+    if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]);placedWords.push({word,cells,found:false});return;}
+  }
+}
+
+/* ==== Render ==== */
+function renderBoard(){
+  const g=$("grid");
+  g.style.gridTemplateColumns=`repeat(${GRID_SIZE},32px)`;
+  g.innerHTML="";
+  for(let r=0;r<GRID_SIZE;r++){for(let c=0;c<GRID_SIZE;c++){const d=document.createElement("div");d.className="cell";d.dataset.r=r;d.dataset.c=c;d.textContent=board[r][c].letter;if(board[r][c].found)d.classList.add("found");g.appendChild(d);}}
+}
+function renderWords(){
+  const ul=$("wordList"); ul.innerHTML="";
+  placedWords.forEach(w=>{
+    const li=document.createElement("li");
+    if(w.found) li.classList.add("found");
+    li.innerHTML=`<div style="font-weight:900">${w.word}</div><div class="hint">${WORDS.find(x=>x.word===w.word)?.hint||""}</div>`;
+    ul.appendChild(li);
+  });
+}
+function updateHUD(){
+  $("hudLeft").textContent=placedWords.filter(w=>!w.found).length;
+  $("hudTimer").textContent=fmtTime(timeRemaining);
+}
+
+/* ==== Timer ==== */
+function startTimer(){clearInterval(gameTimer);timeRemaining=600;updateHUD();gameTimer=setInterval(()=>{timeRemaining--;updateHUD();if(timeRemaining<=0)clearInterval(gameTimer);},1000);}
+function stopTimer(){clearInterval(gameTimer);}
+function resetRound(){clearInterval(gameTimer);timeRemaining=600;newBoard();updateHUD();}
+
+/* ==== Init ==== */
+$("btnShuffle").onclick=()=>{newBoard();renderQR();};
+$("btnStart").onclick=startTimer;
+$("btnStop").onclick=stopTimer;
+$("btnReset").onclick=resetRound;
+newBoard();
+</script>
+</body>
+</html>
