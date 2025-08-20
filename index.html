@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vodafone Wordsearch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+    }
+    header {
+      background: #e60000;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: #fff;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    button {
+      background: #e60000;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #b30000;
+    }
+    .status-bar {
+      margin-left: 20px;
+      font-size: 14px;
+    }
+    .main {
+      display: flex;
+      padding: 15px;
+      gap: 15px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(15, 30px);
+      grid-template-rows: repeat(15, 30px);
+      gap: 2px;
+      background: #222;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .cell {
+      width: 30px;
+      height: 30px;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid #333;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .sidebar {
+      flex: 0 0 300px;
+      background: #1b1b1b;
+      border-radius: 5px;
+      padding: 10px;
+    }
+    .sidebar h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+    .word-hint {
+      background: #222;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 5px;
+    }
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-left: 10px;
+    }
+    .qr-box img {
+      width: 90px;
+      height: 90px;
+    }
+    .qr-label {
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    @media(max-width: 768px) {
+      .main {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+      }
+      .grid {
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Vodafone Wordsearch</h1>
+    <div class="toolbar">
+      <button onclick="shuffleGrid()">Shuffle</button>
+      <button onclick="startGame()">Start</button>
+      <button onclick="stopGame()">Stop</button>
+      <button onclick="resetGame()">Reset</button>
+      <button onclick="addPlayer()">Add Player</button>
+      <button onclick="addTeam()">Add Team</button>
+      <button onclick="toggleQR()">Show QR</button>
+      <div class="qr-box" id="qrBox" style="display:none;">
+        <img id="qrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
+        <div class="qr-label">📱 Scan Me</div>
+      </div>
+      <div class="status-bar">
+        Words left: <span id="wordsLeft">13</span> |
+        Time: <span id="timer">10:00</span> |
+        Quickest: <span id="quickest">--:--</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="grid" id="grid"></div>
+
+    <div class="sidebar">
+      <h2>Leaderboard</h2>
+      <div id="leaderboard">No teams yet 🏆</div>
+
+      <h2>Final Phrase</h2>
+      <div id="finalPhrase"></div>
+
+      <h2>Words to Find</h2>
+      <div id="wordsList"></div>
+    </div>
+  </div>
+
+<script>
+  const words = [
+    {word: "ACHIEVEMENT", hint: "Successful delivery milestone — e.g., logical config complete or critical fault resolved."},
+    {word: "ALLOCATION", hint: "Assigning specific responsibilities or resources to a deployment task."},
+    {word: "AUDIT", hint: "ECS action to ensure accurate site data before deployment."},
+    {word: "CORE", hint: "Backbone of the network layer that sits beyond access."},
+    {word: "CRQ", hint: "Formal change request code used in delivery/go live processes (abbr.)."},
+    {word: "DELIVERY", hint: "Phase where circuits are provisioned, and a site is handed over for live service."},
+    {word: "ESCALATION", hint: "Raising a fault or issue to higher-level support or management."},
+    {word: "LCA", hint: "Team responsible for setting up pre-build, before a site goes live (abbr.)."},
+    {word: "METRIC", hint: "Performance indicators used to track rollout speed, fault resolution, or service uptime."},
+    {word: "NCT", hint: "System used by all regions to allocate sites to INOC (abbr.)."},
+    {word: "SITETRACKER", hint: "The deployment operations tool used for projects, milestones and dashboards."},
+    {word: "TESTING", hint: "Verifying that a new configuration or service behaves as expected before deployment."},
+    {word: "TEAM", hint: "Together Everyone Achieves More."}
+  ];
+  const gridSize = 15;
+  const gridEl = document.getElementById("grid");
+  const wordsListEl = document.getElementById("wordsList");
+
+  // Build word list
+  words.forEach(w => {
+    let div = document.createElement("div");
+    div.className = "word-hint";
+    div.innerHTML = `<b>${w.word}</b><br><small>${w.hint}</small>`;
+    wordsListEl.appendChild(div);
+  });
+
+  // Build grid
+  function createGrid() {
+    gridEl.innerHTML = "";
+    for (let i = 0; i < gridSize * gridSize; i++) {
+      let cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+      gridEl.appendChild(cell);
+    }
+  }
+  createGrid();
+
+  // QR
+  function toggleQR() {
+    const qr = document.getElementById("qrBox");
+    qr.style.display = qr.style.display === "none" ? "flex" : "none";
+  }
+
+  // Placeholder functions
+  function shuffleGrid(){ createGrid(); }
+  function startGame(){ console.log("Game started"); }
+  function stopGame(){ console.log("Game stopped"); }
+  function resetGame(){ createGrid(); }
+  function addPlayer(){ alert("Player added"); }
+  function addTeam(){ alert("Team added"); }
+</script>
+</body>
+</html>
