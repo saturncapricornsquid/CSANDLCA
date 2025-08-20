@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vodafone Wordsearch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      color: #333;
+    }
+    header {
+      background: #e60000;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      position: relative;
+    }
+    #qr-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      text-align: center;
+    }
+    #qr-container img {
+      width: 90px;
+      height: 90px;
+    }
+    #qr-container span {
+      display: block;
+      font-size: 12px;
+      color: white;
+    }
+    #winner-banner {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #b30000;
+      padding: 8px 14px;
+      border-radius: 4px;
+      color: white;
+      font-weight: bold;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
+    .toolbar button {
+      background: #e60000;
+      color: white;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .toolbar button:hover {
+      background: #b30000;
+    }
+    .game-area {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 10px;
+      gap: 20px;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(15, 30px);
+      grid-template-rows: repeat(15, 30px);
+      gap: 2px;
+    }
+    #grid div {
+      width: 30px;
+      height: 30px;
+      background: white;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    #grid div.highlight {
+      background: yellow;
+    }
+    #hints {
+      max-width: 300px;
+    }
+    #hints h3 {
+      margin-top: 0;
+      color: #e60000;
+    }
+    #hints ul {
+      list-style: none;
+      padding: 0;
+    }
+    #hints li {
+      margin-bottom: 8px;
+    }
+    #hints li.found {
+      text-decoration: line-through;
+      color: grey;
+    }
+    #final-phrase {
+      margin: 20px auto;
+      text-align: center;
+    }
+    #final-phrase span {
+      display: inline-block;
+      width: 24px;
+      height: 30px;
+      border-bottom: 2px solid #333;
+      margin: 0 2px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    #leaderboard {
+      margin: 20px auto;
+      max-width: 500px;
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+    #leaderboard h3 {
+      margin-top: 0;
+      color: #e60000;
+    }
+    @media (max-width: 768px) {
+      #qr-container img { width: 70px; height: 70px; }
+      .game-area { flex-direction: column; align-items: center; }
+      #grid { grid-template-columns: repeat(15, 22px); grid-template-rows: repeat(15, 22px); }
+      #grid div { width: 22px; height: 22px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    Vodafone Wordsearch
+    <div id="qr-container">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
+      <span>Scan me</span>
+    </div>
+    <div id="winner-banner">No winner yet</div>
+  </header>
+
+  <div class="toolbar">
+    <button onclick="startGame()">Start</button>
+    <button onclick="stopGame()">Stop</button>
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="shuffleGrid()">Shuffle</button>
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="addTeam()">Add Team</button>
+    <button onclick="showQR()">Show QR</button>
+    <button onclick="hideQR()">Hide QR</button>
+  </div>
+
+  <div id="timer" style="text-align:center; font-weight:bold; font-size:18px;">00:00</div>
+
+  <div class="game-area">
+    <div id="grid"></div>
+    <div id="hints">
+      <h3>Hints</h3>
+      <ul id="hints-list"></ul>
+    </div>
+  </div>
+
+  <div id="final-phrase"></div>
+
+  <div id="leaderboard">
+    <h3>Leaderboard</h3>
+    <div id="teams">Teams: none</div>
+    <div id="players">Players: none</div>
+  </div>
+
+  <script>
+    const words = [
+      { word: "CORE", hint: "Backbone of the network layer that sits beyond access" },
+      { word: "SITETRACKER", hint: "The deployment operations tool used for projects, milestones and dashboards." },
+      { word: "ALLOCATION", hint: "Assigning responsibilities or resources to a deployment task" },
+      { word: "NCT", hint: "System used by all regions to allocate sites to INOC (abbr.)" },
+      { word: "DELIVERY", hint: "Phase where circuits are provisioned, site handed for live service" },
+      { word: "LCA", hint: "Team responsible for setting up pre-build, before go live (abbr.)" },
+      { word: "CRQ", hint: "Formal change request code used in delivery/go live processes (abbr.)" },
+      { word: "AUDIT", hint: "ECS action to ensure accurate site data before deployment" },
+      { word: "TESTING", hint: "Verifying configuration/service before deployment" },
+      { word: "ESCALATION", hint: "Act of raising a fault/issue to higher-level support" },
+      { word: "ACHIEVEMENTS", hint: "Successful delivery milestone or critical fault resolution" },
+      { word: "METRIC", hint: "Performance indicators tracking rollout/faults/uptime" },
+      { word: "TEAM", hint: "Collaboration group, final word" }
+    ];
+    const finalPhrase = "CSANDLCA";
+    let timer, seconds = 0;
+
+    function buildGrid() {
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
+      for (let i=0; i<225; i++) {
+        const cell = document.createElement("div");
+        cell.textContent = String.fromCharCode(65 + Math.floor(Math.random()*26));
+        grid.appendChild(cell);
+      }
+    }
+    function loadHints() {
+      const list = document.getElementById("hints-list");
+      list.innerHTML = "";
+      words.forEach(w => {
+        const li = document.createElement("li");
+        li.textContent = w.word + ": " + w.hint;
+        li.id = "hint-" + w.word;
+        list.appendChild(li);
+      });
+    }
+    function loadFinalPhrase() {
+      const container = document.getElementById("final-phrase");
+      container.innerHTML = "";
+      finalPhrase.split("").forEach(_ => {
+        const span = document.createElement("span");
+        container.appendChild(span);
+      });
+    }
+    function startGame() {
+      clearInterval(timer);
+      seconds = 0;
+      timer = setInterval(() => {
+        seconds++;
+        const m = String(Math.floor(seconds/60)).padStart(2,"0");
+        const s = String(seconds%60).padStart(2,"0");
+        document.getElementById("timer").textContent = m+":"+s;
+      }, 1000);
+    }
+    function stopGame() { clearInterval(timer); }
+    function resetGame() { stopGame(); seconds=0; document.getElementById("timer").textContent="00:00"; buildGrid(); loadHints(); loadFinalPhrase(); }
+    function shuffleGrid() { buildGrid(); }
+    function addPlayer() { alert("Add Player placeholder"); }
+    function addTeam() { alert("Add Team placeholder"); }
+    function showQR(){ document.getElementById("qr-container").style.display="block"; }
+    function hideQR(){ document.getElementById("qr-container").style.display="none"; }
+
+    buildGrid();
+    loadHints();
+    loadFinalPhrase();
+  </script>
+
+</body>
+</html>
