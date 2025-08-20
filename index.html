@@ -18,206 +18,164 @@
     left: 0;
     width: 100%;
     background: #e60000;
-    color: white;
+    color: #fff;
     z-index: 1000;
-    padding: 8px 10px;
+    padding: 10px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  }
-
-  header .topRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
   }
 
   header h1 {
     margin: 0;
-    font-size: 1.2em;
+    font-size: 1.5em;
   }
 
   header .subtitle {
-    font-size: 0.8em;
-    margin-top: 2px;
+    font-size: 0.85em;
     opacity: 0.9;
+    margin: 2px 0 5px 0;
   }
 
   .toolbar {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    margin-top: 5px;
+    gap: 8px;
+    margin-bottom: 5px;
   }
 
   button {
     background: #111;
     border: none;
-    padding: 6px 10px;
+    padding: 10px 14px;
     color: #fff;
-    border-radius: 6px;
-    cursor: pointer;
+    border-radius: 8px;
     font-weight: bold;
-    font-size: 0.85em;
-  }
-
-  button:hover {
-    background: #333;
+    cursor: pointer;
+    flex: 1 1 auto;
+    min-width: 80px;
   }
 
   button#startBtn { background: #e60000; }
   button#startBtn:hover { background: #b50000; }
+  button:hover { background: #333; }
 
   #statusBar {
-    font-size: 0.75em;
     background: #222;
-    padding: 4px 8px;
+    padding: 6px 10px;
     border-radius: 5px;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-size: 0.85em;
+    margin-top: 5px;
+    text-align: center;
   }
   #statusBar span { font-weight: bold; }
 
   #qrContainer {
     display: inline-block;
-    margin-left: 5px;
-    transform: translateY(-5px);
-    opacity: 0;
-    transition: transform 0.3s, opacity 0.3s;
-  }
-  #qrContainer.show {
-    transform: translateY(0);
-    opacity: 1;
+    text-align: center;
+    margin-top: 5px;
   }
   #qrContainer img {
-    width: 40px;
-    height: 40px;
-    border: 2px solid #fff;
-    border-radius: 6px;
+    width: 80px;
+    height: 80px;
+    border: 3px solid #fff;
+    border-radius: 8px;
   }
 
   .container {
     display: flex;
     flex-wrap: wrap;
-    padding: 120px 5px 20px;
-  }
-
-  #puzzle {
-    flex: 2;
-    display: flex;
     justify-content: center;
-    margin: 5px;
+    gap: 20px;
+    padding: 180px 10px 20px; /* space for header */
   }
 
   #puzzleGrid {
     display: grid;
-    grid-template-columns: repeat(15, 22px);
-    grid-template-rows: repeat(15, 22px);
+    grid-template-columns: repeat(15, 1fr);
     gap: 2px;
+    width: 100%;
+    max-width: 600px;
   }
 
   .cell {
-    width: 22px;
-    height: 22px;
+    aspect-ratio: 1/1;
     background: #222;
     border: 1px solid #444;
     display: flex;
     justify-content: center;
     align-items: center;
     font-weight: bold;
+    font-size: 1em;
     cursor: pointer;
   }
 
-  .cell.found {
-    background: #e60000;
-    color: #fff;
-  }
-
-  #sidePanel {
-    flex: 1;
-    margin: 5px;
-  }
+  .cell.found { background: #e60000; color: #fff; }
 
   .card {
     background: #1a1a1a;
-    padding: 8px;
+    padding: 10px;
     border-radius: 6px;
-    margin-bottom: 8px;
+    width: 300px;
   }
+  .card h3 { margin-top: 0; font-size: 1em; }
 
-  .card h3 {
-    margin-top: 0;
-    font-size: 0.9em;
+  ul { padding-left: 20px; margin: 5px 0; }
+
+  @media (max-width: 768px) {
+    .toolbar { flex-direction: column; align-items: flex-start; }
+    #statusBar { font-size: 0.75em; padding: 4px 6px; }
+    .card { width: 90%; }
+    #puzzleGrid { max-width: 90vw; gap: 1px; }
+    .cell { font-size: 0.9em; }
+    #qrContainer img { width: 60px; height: 60px; }
   }
 
   @media (max-width: 480px) {
-    .toolbar {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-    }
-    #statusBar {
-      font-size: 0.7em;
-      padding: 3px 6px;
-    }
-    #puzzleGrid {
-      grid-template-columns: repeat(15, 18px);
-      grid-template-rows: repeat(15, 18px);
-    }
-    .cell { width: 18px; height: 18px; font-size: 0.75em; }
-    #qrContainer img { width: 35px; height: 35px; }
-    .card { padding: 6px; }
-    .card h3 { font-size: 0.85em; }
+    button { font-size: 0.85em; padding: 12px; min-width: 60px; }
+    .card { padding: 8px; }
+    .cell { font-size: 0.8em; }
   }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="topRow">
-    <div>
-      <h1>Vodafone Wordsearch</h1>
-      <div class="subtitle">Multiplayer • Final phrase hidden</div>
-    </div>
-    <div class="toolbar">
-      <button id="shuffleBtn">Shuffle</button>
-      <button id="startBtn">Start</button>
-      <button id="stopBtn">Stop</button>
-      <button id="resetBtn">Reset</button>
-      <button id="addPlayerBtn">Add Player</button>
-      <button id="addTeamBtn">Add Team</button>
-      <button id="showQRBtn">Show QR</button>
-      <div id="qrContainer">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
-      </div>
-      <div id="statusBar">
-        Words left: <span id="wordsLeft">13</span> | Time: <span id="timer">10:00</span> | Quickest: <span id="quickest">--:--</span>
-      </div>
-    </div>
+  <h1>Vodafone Wordsearch</h1>
+  <div class="subtitle">Multiplayer • Final phrase hidden</div>
+  <div class="toolbar">
+    <button id="shuffleBtn">Shuffle</button>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn">Stop</button>
+    <button id="resetBtn">Reset</button>
+    <button id="addPlayerBtn">Add Player</button>
+    <button id="addTeamBtn">Add Team</button>
+    <button id="showQRBtn">Show QR</button>
+  </div>
+  <div id="statusBar">
+    Words left: <span id="wordsLeft">13</span> | Time: <span id="timer">10:00</span> | Quickest: <span id="quickest">--:--</span>
+  </div>
+  <div id="qrContainer">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
+    <div>📱 Scan Me</div>
   </div>
 </header>
 
 <div class="container">
-  <div id="puzzle">
-    <div id="puzzleGrid"></div>
+  <div id="puzzleGrid"></div>
+
+  <div class="card">
+    <h3>Leaderboard</h3>
+    <ul id="leaderboard"><li>No teams yet 🏆</li></ul>
   </div>
 
-  <div id="sidePanel">
-    <div class="card">
-      <h3>Leaderboard</h3>
-      <ul id="leaderboard"><li>No teams yet 🏆</li></ul>
-    </div>
+  <div class="card">
+    <h3>Final Phrase</h3>
+    <div id="finalPhraseSlots"></div>
+    <button id="claimBtn">Claim Final Phrase</button>
+  </div>
 
-    <div class="card">
-      <h3>Final Phrase</h3>
-      <div id="finalPhraseSlots"></div>
-      <button id="claimBtn">Claim Final Phrase</button>
-    </div>
-
-    <div class="card">
-      <h3>Words to Find</h3>
-      <ul id="wordsList"></ul>
-    </div>
+  <div class="card">
+    <h3>Words to Find</h3>
+    <ul id="wordsList"></ul>
   </div>
 </div>
 
@@ -225,41 +183,38 @@
 const gridSize = 15;
 const words = ["ACHIEVEMENT","ALLOCATION","AUDIT","CORE","CRQ","DELIVERY","ESCALATION","LCA","METRIC","NCT","SITETRACKER","TESTING","TEAM"];
 
-let puzzleGrid = document.getElementById("puzzleGrid");
-let wordsLeftDisplay = document.getElementById("wordsLeft");
+const puzzleGrid = document.getElementById("puzzleGrid");
+const wordsLeftDisplay = document.getElementById("wordsLeft");
 wordsLeftDisplay.textContent = words.length;
 
-// Generate grid
 function generateGrid() {
   puzzleGrid.innerHTML = "";
-  for (let i=0; i<gridSize*gridSize; i++){
-    let cell = document.createElement("div");
+  for (let i=0;i<gridSize*gridSize;i++){
+    const cell = document.createElement("div");
     cell.classList.add("cell");
-    cell.textContent = String.fromCharCode(65 + Math.floor(Math.random()*26));
+    cell.textContent = String.fromCharCode(65+Math.floor(Math.random()*26));
     puzzleGrid.appendChild(cell);
   }
 }
 generateGrid();
 
-// Fill word list
 const wordsList = document.getElementById("wordsList");
 words.forEach(word => {
-  let li = document.createElement("li");
+  const li = document.createElement("li");
   li.textContent = word;
   wordsList.appendChild(li);
 });
 
-// QR logic
 const qrContainer = document.getElementById("qrContainer");
 const showQRBtn = document.getElementById("showQRBtn");
 const startBtn = document.getElementById("startBtn");
 const stopBtn = document.getElementById("stopBtn");
 const resetBtn = document.getElementById("resetBtn");
 
-showQRBtn.addEventListener("click", ()=>{ qrContainer.classList.toggle("show"); });
-startBtn.addEventListener("click", ()=>qrContainer.classList.remove("show"));
-stopBtn.addEventListener("click", ()=>qrContainer.classList.add("show"));
-resetBtn.addEventListener("click", ()=>qrContainer.classList.add("show"));
+showQRBtn.addEventListener("click", ()=>{ qrContainer.style.display = qrContainer.style.display==='block'?'none':'block'; });
+startBtn.addEventListener("click", ()=>qrContainer.style.display='none');
+stopBtn.addEventListener("click", ()=>qrContainer.style.display='block');
+resetBtn.addEventListener("click", ()=>qrContainer.style.display='block');
 </script>
 </body>
 </html>
