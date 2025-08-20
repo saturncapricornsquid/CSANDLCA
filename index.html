@@ -1,0 +1,277 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vodafone Wordsearch</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #333;
+    }
+    header {
+      background: #e60000;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    #qr-container {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      text-align: center;
+      z-index: 1200;
+    }
+    #qr-container img {
+      width: 120px;
+      height: 120px;
+    }
+    #qr-label {
+      color: #e60000;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    #leaderboard {
+      position: fixed;
+      top: 60px;
+      right: 10px;
+      width: 200px;
+      background: #fff;
+      border: 2px solid #e60000;
+      padding: 10px;
+      font-size: 14px;
+      z-index: 1100;
+    }
+    #final-phrase {
+      text-align: center;
+      margin: 20px 0 10px 0;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #slots {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 20px;
+    }
+    .slot {
+      width: 28px;
+      height: 32px;
+      border: 2px solid #e60000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      background: #fff;
+    }
+    #main {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    #hints {
+      flex: 1 1 220px;
+      max-width: 250px;
+      margin: 0 10px;
+      border: 2px solid #e60000;
+      padding: 10px;
+    }
+    #hints h3 {
+      margin-top: 0;
+      color: #e60000;
+    }
+    #grid-container {
+      flex: 1 1 400px;
+      max-width: 500px;
+      margin: 10px;
+    }
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      gap: 2px;
+    }
+    .cell {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #ccc;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14px;
+      user-select: none;
+      cursor: pointer;
+    }
+    .found { background: #90ee90; }
+    #toolbar {
+      text-align: center;
+      margin: 15px 0;
+    }
+    #toolbar button {
+      margin: 5px;
+      padding: 8px 12px;
+      background: #e60000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+    #toolbar button:hover { background: #b50000; }
+    @media (max-width: 768px) {
+      #qr-container img { width: 80px; height: 80px; }
+      #leaderboard { width: 160px; font-size: 12px; }
+      .cell { width: 22px; height: 22px; font-size: 12px; }
+      #slots .slot { width: 22px; height: 26px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header>Vodafone Wordsearch</header>
+
+  <div id="qr-container">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
+    <div id="qr-label">📱 Scan Me</div>
+  </div>
+
+  <div id="leaderboard">
+    <h3>🏆 Leaderboard</h3>
+    <div id="teams">Teams: None</div>
+    <div id="players">Players: None</div>
+  </div>
+
+  <div id="final-phrase">
+    Final Phrase:
+    <div id="slots"></div>
+  </div>
+
+  <div id="toolbar">
+    <button onclick="startTimer()">Start</button>
+    <button onclick="stopTimer()">Stop</button>
+    <button onclick="resetTimer()">Reset</button>
+    <button onclick="shuffleGrid()">Shuffle</button>
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="addTeam()">Add Team</button>
+    <button onclick="showQR()">Show QR</button>
+    <div id="timer">⏱ 10:00</div>
+  </div>
+
+  <div id="main">
+    <div id="hints">
+      <h3>Hints & Words</h3>
+      <ul id="hints-list"></ul>
+    </div>
+    <div id="grid-container">
+      <div id="grid"></div>
+    </div>
+  </div>
+
+<script>
+  const words = [
+    {word:"CORE", hint:"Backbone of the network layer that sits beyond access"},
+    {word:"SITETRACKER", hint:"The deployment operations tool used for projects, milestones and dashboards."},
+    {word:"ALLOCATION", hint:"Which activity involves assigning specific responsibilities or resources to a deployment task?"},
+    {word:"NCT", hint:"System used by all regions to allocate sites to INOC (abbr.)."},
+    {word:"DELIVERY", hint:"What term describes the phase where circuits are provisioned, and a site is handed over for live service?"},
+    {word:"LCA", hint:"Which team is responsible for setting up pre-build, before a site goes live? (abbr.)"},
+    {word:"CRQ", hint:"Formal change request code used in delivery/go live processes (abbr.)."},
+    {word:"AUDIT", hint:"Essential Connectivity Services action to ensure accurate site data before deployment."},
+    {word:"TESTING", hint:"What term describes the process of verifying that a new configuration or service behaves as expected before deployment?"},
+    {word:"ESCALATION", hint:"What term describes the act of raising a fault or issue to higher-level support or management?"},
+    {word:"ACHIEVEMENTS", hint:"What term describes a successful delivery milestone, such as completing a logical configuration or resolving a critical fault?"},
+    {word:"METRIC", hint:"What word refers to the performance indicators used to track rollout speed, fault resolution, or service uptime?"},
+    {word:"TEAM", hint:"A group collaborating together"}
+  ];
+
+  const finalPhrase = "CSANDLCATEAM";
+  let gridSize = 15;
+  let grid = [];
+  let timerInterval;
+  let timeRemaining = 600;
+
+  function init() {
+    buildGrid();
+    renderHints();
+    renderSlots();
+  }
+
+  function buildGrid() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    grid = [];
+    for (let i=0;i<gridSize;i++) {
+      grid[i] = [];
+      for (let j=0;j<gridSize;j++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.textContent = String.fromCharCode(65+Math.floor(Math.random()*26));
+        grid[i][j] = cell;
+        gridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function renderHints() {
+    const list = document.getElementById('hints-list');
+    list.innerHTML = '';
+    words.forEach(w => {
+      const li = document.createElement('li');
+      li.textContent = w.hint + " (" + w.word.length + ")";
+      list.appendChild(li);
+    });
+  }
+
+  function renderSlots() {
+    const slotsEl = document.getElementById('slots');
+    slotsEl.innerHTML = '';
+    finalPhrase.split('').forEach(()=>{
+      const s = document.createElement('div');
+      s.className = 'slot';
+      slotsEl.appendChild(s);
+    });
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      timeRemaining--;
+      document.getElementById('timer').textContent = formatTime(timeRemaining);
+      if (timeRemaining <= 0) clearInterval(timerInterval);
+    },1000);
+  }
+  function stopTimer(){ clearInterval(timerInterval); }
+  function resetTimer(){
+    clearInterval(timerInterval);
+    timeRemaining=600;
+    document.getElementById('timer').textContent = formatTime(timeRemaining);
+  }
+  function formatTime(sec){
+    const m=Math.floor(sec/60);
+    const s=sec%60;
+    return `⏱ ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+  function shuffleGrid(){ buildGrid(); }
+  function addPlayer(){ alert("Add Player clicked"); }
+  function addTeam(){ alert("Add Team clicked"); }
+
+  function showQR() {
+    document.getElementById('qr-container').style.display = 'block';
+  }
+
+  // Hide QR after "scan" simulation
+  document.querySelector('#qr-container img').addEventListener('click', ()=>{
+    document.getElementById('qr-container').style.display = 'none';
+  });
+
+  init();
+</script>
+</body>
+</html>
