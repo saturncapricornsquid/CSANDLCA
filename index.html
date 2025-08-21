@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vodafone Wordsearch</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #000;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      font-size: 1.5em;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .toolbar {
+      background: #111;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+      padding: 10px;
+    }
+    .toolbar button {
+      padding: 6px 12px;
+      border: none;
+      background: #fff;
+      color: red;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+    }
+    .grid {
+      flex: 2;
+      display: grid;
+      grid-template-columns: repeat(15, 1fr);
+      max-width: 600px;
+      margin: 10px auto;
+      gap: 1px;
+      background: #000;
+    }
+    .cell {
+      background: #000;
+      border: 1px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      width: 30px;
+      height: 30px;
+    }
+    .cell.found {
+      background: red;
+      color: #fff;
+    }
+    .sidebar {
+      flex: 1;
+      background: #111;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    .leaderboard {
+      margin-bottom: 20px;
+    }
+    .wordlist {
+      margin-bottom: 20px;
+    }
+    .wordlist li {
+      cursor: pointer;
+    }
+    .wordlist li.found {
+      text-decoration: line-through;
+      color: gray;
+    }
+    .final-phrase {
+      margin-bottom: 20px;
+      font-size: 1.2em;
+      letter-spacing: 5px;
+    }
+    .statusbar {
+      background: #000;
+      color: #fff;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.9em;
+    }
+    #qrcode {
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>Vodafone Wordsearch</header>
+  <div class="toolbar">
+    <button onclick="shuffleGrid()">Shuffle</button>
+    <button onclick="startGame()">Start</button>
+    <button onclick="stopGame()">Stop</button>
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="addPlayer()">Add Player</button>
+    <button onclick="addTeam()">Add Team</button>
+    <button onclick="toggleQR()">Show QR</button>
+  </div>
+  <div class="main">
+    <div class="grid" id="grid"></div>
+    <div class="sidebar">
+      <div class="leaderboard">
+        <h3>Leaderboard</h3>
+        <ul id="leaderboardList"></ul>
+      </div>
+      <div class="wordlist">
+        <h3>Words</h3>
+        <ul id="wordsList"></ul>
+      </div>
+      <div class="final-phrase" id="finalPhrase"></div>
+      <div id="qrcode">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://vodafone.com" alt="QR Code">
+      </div>
+    </div>
+  </div>
+  <div class="statusbar">
+    Words Left: <span id="wordsLeft"></span> | 
+    Timer: <span id="timer">0s</span> | 
+    Quickest Time: <span id="quickest">-</span>
+  </div>
+
+  <script>
+    const gridSize = 15;
+    const words = [
+      { word: "COMMUNICATE", hint: "Exchange of information" },
+      { word: "COLLABORATE", hint: "Work together" },
+      { word: "INNOVATE", hint: "Create new ideas" },
+      { word: "TEAMWORK", hint: "Group effort" },
+      { word: "CUSTOMER", hint: "The client" },
+      { word: "TRUST", hint: "Foundation of relationships" },
+      { word: "AGILE", hint: "Flexible way of working" },
+      { word: "LEADERSHIP", hint: "Guiding a team" },
+      { word: "INCLUSION", hint: "Everyone belongs" },
+      { word: "RESPECT", hint: "Mutual regard" },
+      { word: "SPEED", hint: "Fast execution" },
+      { word: "QUALITY", hint: "High standard" },
+      { word: "DELIVERY", hint: "Providing results" }
+    ];
+    const finalPhrase = "CSANDLCATEAM";
+    let grid = Array(gridSize).fill().map(()=>Array(gridSize).fill(''));
+    let timerInterval, seconds=0, wordsFound=0;
+    let quickestTime = null;
+
+    function fillGrid() {
+      // Place words randomly
+      for (let {word} of words) {
+        placeWord(word.toUpperCase());
+      }
+      // Fill remaining with random letters
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      for (let r=0;r<gridSize;r++){
+        for (let c=0;c<gridSize;c++){
+          if (grid[r][c]==='') {
+            grid[r][c] = letters[Math.floor(Math.random()*letters.length)];
+          }
+        }
+      }
+    }
+    function placeWord(word) {
+      const directions = [
+        [0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,-1],[1,-1],[-1,1]
+      ];
+      let placed=false;
+      let attempts=0;
+      while(!placed && attempts<100){
+        attempts++;
+        let dir = directions[Math.floor(Math.random()*directions.length)];
+        if (word.length>gridSize) return;
+        let row = Math.floor(Math.random()*gridSize);
+        let col = Math.floor(Math.random()*gridSize);
+        let endRow = row + dir[0]*(word.length-1);
+        let endCol = col + dir[1]*(word.length-1);
+        if (endRow<0 || endRow>=gridSize || endCol<0 || endCol>=gridSize) continue;
+        let conflict=false;
+        for (let i=0;i<word.length;i++){
+          let rr=row+dir[0]*i, cc=col+dir[1]*i;
+          if (grid[rr][cc]!=='' && grid[rr][cc]!==word[i]) { conflict=true; break; }
+        }
+        if (conflict) continue;
+        for (let i=0;i<word.length;i++){
+          let rr=row+dir[0]*i, cc=col+dir[1]*i;
+          grid[rr][cc]=word[i];
+        }
+        placed=true;
+      }
+    }
+
+    function renderGrid() {
+      const gridEl=document.getElementById('grid');
+      gridEl.innerHTML='';
+      for (let r=0;r<gridSize;r++){
+        for (let c=0;c<gridSize;c++){
+          let div=document.createElement('div');
+          div.className='cell';
+          div.textContent=grid[r][c];
+          gridEl.appendChild(div);
+        }
+      }
+    }
+
+    function renderWords() {
+      const list=document.getElementById('wordsList');
+      list.innerHTML='';
+      words.forEach((w,i)=>{
+        let li=document.createElement('li');
+        li.textContent=w.word+" – "+w.hint;
+        li.onclick=()=>markFound(i);
+        list.appendChild(li);
+      });
+      document.getElementById('wordsLeft').textContent=words.length;
+      document.getElementById('finalPhrase').textContent="_".repeat(finalPhrase.length);
+    }
+
+    function markFound(i){
+      const list=document.getElementById('wordsList').children;
+      if (!list[i].classList.contains('found')) {
+        list[i].classList.add('found');
+        wordsFound++;
+        revealLetter();
+        document.getElementById('wordsLeft').textContent=words.length-wordsFound;
+        if (wordsFound===words.length) {
+          gameWon();
+        }
+      }
+    }
+    function revealLetter() {
+      let phraseEl=document.getElementById('finalPhrase');
+      let current=phraseEl.textContent.split('');
+      current[wordsFound-1]=finalPhrase[wordsFound-1];
+      phraseEl.textContent=current.join('');
+    }
+
+    function gameWon(){
+      clearInterval(timerInterval);
+      const msg="Winner! Time: "+seconds+"s";
+      alert(msg);
+      if (!quickestTime || seconds<quickestTime){
+        quickestTime=seconds;
+        document.getElementById('quickest').textContent=quickestTime+"s";
+      }
+    }
+
+    function startGame(){
+      if (timerInterval) return;
+      timerInterval=setInterval(()=>{
+        seconds++;
