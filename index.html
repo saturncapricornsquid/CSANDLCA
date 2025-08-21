@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Vodafone Wordsearch</title> <style>
+    * { box-sizing: border-box; margin:0; padding:0; font-family: Arial, sans-serif;}
+    body { background: #f7f7f7; }
+
+    header {
+        position: fixed; top:0; left:0; width:100%;
+        background:#e60000; color:#fff; padding:10px 20px;
+        display:flex; justify-content:space-between; align-items:center; z-index:1000;
+    }
+    header h1 { font-size:1.5em; }
+
+    .toolbar button{
+        background:#fff; color:#e60000; border:none; padding:8px 12px; margin:0 4px;
+        border-radius:4px; cursor:pointer; font-weight:bold;
+    }
+    .toolbar button:hover { background:#ffe6e6; }
+
+    .container{ display:flex; margin-top:80px; padding:10px 20px; gap:10px; flex-wrap:wrap; }
+
+    /* Responsive Grid */
+    .grid-container{
+        flex:2;
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+        gap:2px;
+    }
+    .grid-cell{
+        width:100%;
+        padding-top:100%; /* square */
+        position:relative;
+        background:#fff;
+        border-radius:4px;
+        cursor:pointer;
+        user-select:none;
+        font-weight:bold;
+    }
+    .grid-cell span{
+        position:absolute; top:0; left:0; right:0; bottom:0;
+        display:flex; justify-content:center; align-items:center;
+    }
+    .grid-cell.found{ background:#e60000; color:#fff; }
+
+    .right-panel{
+        flex:1; background:#fff; padding:10px; border-radius:6px;
+        display:flex; flex-direction:column; gap:10px; max-height:80vh; overflow-y:auto;
+    }
+    .hints, .words, .final-phrase, .leaderboard{ border:1px solid #ddd; padding:8px; border-radius:4px;}
+    .hints li, .words li{ cursor:pointer; margin:4px 0; }
+    .hints li.found, .words li.found{ text-decoration:line-through; color:#888; }
+
+    .final-phrase span{
+        display:inline-block; width:25px; height:25px;
+        border-bottom:2px solid #e60000; text-align:center;
+        margin:2px; font-weight:bold; font-size:1.2em;
+    }
+
+    .status-bar{
+        position:fixed; bottom:0; left:0; width:100%;
+        background:#fff; border-top:1px solid #ddd;
+        display:flex; justify-content:space-around; padding:8px 0; font-weight:bold;
+    }
+
+    #qr-container{ margin-top:10px; text-align:center;}
+    #qr-container img{ width:120px; height:120px; }
+
+    #winner{
+        position:fixed; top:50px; right:20px; background:#00b300; color:#fff;
+        padding:10px 15px; border-radius:6px; display:none; font-weight:bold; z-index:1000;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Vodafone Wordsearch</h1>
+    <div class="toolbar">
+        <button id="shuffleBtn">Shuffle</button>
+        <button id="startBtn">Start</button>
+        <button id="stopBtn">Stop</button>
+        <button id="resetBtn">Reset</button>
+        <button id="addPlayerBtn">Add Player</button>
+        <button id="addTeamBtn">Add Team</button>
+        <button id="showQRBtn">Show QR</button>
+    </div>
+</header>
+
+<div id="winner"></div>
+
+<div class="container">
+    <div class="grid-container" id="grid"></div>
+
+    <div class="right-panel">
+        <div class="hints">
+            <h3>Hints</h3>
+            <ul id="hintsList"></ul>
+        </div>
+        <div class="words">
+            <h3>Words</h3>
+            <ul id="wordsList"></ul>
+        </div>
+        <div class="final-phrase">
+            <h3>Final Phrase</h3>
+            <div id="finalPhraseSlots"></div>
+        </div>
+        <div class="leaderboard">
+            <h3>Leaderboard</h3>
+            <ul id="leaderboardList"></ul>
+        </div>
+        <div id="qr-container" style="display:none;">
+            <img src="https://eur03.safelinks.protection.outlook.com/?url=https%3A%2F%2Fapi.qrserver.com%2Fv1%2Fcreate-qr-code%2F%3Fdata%3Dhttps%3A%2F%2Fvodafone.com%26size%3D120x120&data=05%7C02%7Cjoanna.hopwood%40vodafone.com%7C19557e3802274b9262c208dde098fe35%7C68283f3b84874c86adb3a5228f18b893%7C0%7C0%7C638913669900123622%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=9%2BL7NVIMarZHfSgRU9tft5oRV%2BHF20BJPs0jxk783HE%3D&reserved=0" alt="QR Code">
+        </div>
+    </div>
+</div>
+
+<div class="status-bar">
+    <div>Words Left: <span id="wordsLeft">13</span></div>
+    <div>Timer: <span id="timer">00:00</span></div>
+    <div>Quickest Time: <span id="quickest">--:--</span></div> </div>
+
+<script>
+const words = [
+    { word: 'CONNECT', hint: 'To join together' },
+    { word: 'TEAM', hint: 'Group working together' },
+    { word: 'LEADER', hint: 'Person in charge' },
+    { word: 'COMMUNICATE', hint: 'Share information' },
+    { word: 'STRATEGY', hint: 'Plan of action' },
+    { word: 'SUCCESS', hint: 'Achievement' },
+    { word: 'PLAN', hint: 'Outline steps' },
+    { word: 'INNOVATE', hint: 'Create something new' },
+    { word: 'GOAL', hint: 'Target to reach' },
+    { word: 'MOTIVATE', hint: 'Encourage action' },
+    { word: 'INSPIRE', hint: 'Stimulate creativity' },
+    { word: 'COLLABORATE', hint: 'Work together' },
+    { word: 'ACHIEVE', hint: 'Reach an objective' } ];
+
+const finalPhrase = 'CSANDLCATEAM'.split(''); let revealedLetters = Array(finalPhrase.length).fill('');
+let wordsFound = 0;
+
+const hintsList = document.getElementById('hintsList');
+const wordsList = document.getElementById('wordsList');
+words.forEach((w,i)=>{
+    const hintLi = document.createElement('li');
+    hintLi.textContent = w.hint;
+    hintLi.dataset.index=i;
+    hintsList.appendChild(hintLi);
+
+    const wordLi = document.createElement('li');
+    wordLi.textContent = w.word;
+    wordLi.dataset.index=i;
+    wordsList.appendChild(wordLi);
+});
+
+// Final Phrase slots
+const finalSlots = document.getElementById('finalPhraseSlots');
+finalPhrase.forEach(()=>{ const span=document.createElement('span'); finalSlots.appendChild(span);});
+
+// Grid generation
+const grid = document.getElementById('grid'); const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; function generateGrid(){
+    grid.innerHTML='';
+    for(let i=0;i<100;i++){
+        const cell=document.createElement('div');
+        cell.classList.add('grid-cell');
+        const span = document.createElement('span');
+        span.textContent = letters[Math.floor(Math.random()*letters.length)];
+        cell.appendChild(span);
+        grid.appendChild(cell);
+
+        cell.addEventListener('click', ()=>{
+            if(!cell.classList.contains('found')){
+                cell.classList.add('found');
+                revealNextLetter();
+                checkWinner();
+            }
+        });
+    }
+}
+generateGrid();
+
+// Reveal final phrase letter
+function revealNextLetter(){
+    for(let i=0;i<revealedLetters.length;i++){
+        if(revealedLetters[i]===''){
+            revealedLetters[i]=finalPhrase[i];
+            finalSlots.children[i].textContent=finalPhrase[i];
+            break;
+        }
+    }
+}
+
+// Word list click
+wordsList.querySelectorAll('li').forEach(li=>{
+    li.addEventListener('click', ()=>{
+        if(!li.classList.contains('found')){
+            li.classList.add('found');
+            wordsFound++;
+            document.getElementById('wordsLeft').textContent=words.length-wordsFound;
+            revealNextLetter();
+            checkWinner();
+        }
+    });
+});
+
+// Check winner
+function checkWinner(){
+    if(wordsFound===words.length){
+        const time=document.getElementById('timer').textContent;
+        document.getElementById('winner').textContent=`Winner: Team/Player in ${time}`;
+        document.getElementById('winner').style.display='block';
+    }
+}
+
+// Timer
+let timerInterval, seconds=0;
+function startTimer(){
+    clearInterval(timerInterval);
+    timerInterval=setInterval(()=>{
+        seconds++;
+        const mins=String(Math.floor(seconds/60)).padStart(2,'0');
+        const secs=String(seconds%60).padStart(2,'0');
+        document.getElementById('timer').textContent=`${mins}:${secs}`;
+    },1000);
+}
+function stopTimer(){ clearInterval(timerInterval); }
+
+// Toolbar buttons
+document.getElementById('startBtn').addEventListener('click', startTimer); document.getElementById('stopBtn').addEventListener('click', stopTimer); document.getElementById('resetBtn').addEventListener('click', ()=> location.reload());
+
+// QR toggle
+document.getElementById('showQRBtn').addEventListener('click', ()=>{
+    const qr=document.getElementById('qr-container');
+    qr.style.display = qr.style.display==='none'?'block':'none';
+});
+
+// Shuffle letters
+document.getElementById('shuffleBtn').addEventListener('click', ()=>{ generateGrid(); });
+
+// Add Player
+document.getElementById('addPlayerBtn').addEventListener('click', ()=>{
+    const name = prompt('Enter player name:');
+    if(name){
+        const li=document.createElement('li');
+        li.textContent = name;
+        document.getElementById('leaderboardList').appendChild(li);
+    }
+});
+
+// Add Team
+document.getElementById('addTeamBtn').addEventListener('click', ()=>{
+    const name = prompt('Enter team name:');
+    if(name){
+        const li=document.createElement('li');
+        li.textContent = name;
+        document.getElementById('leaderboardList').appendChild(li);
+    }
+});
+</script>
+
+</body>
+</html>
