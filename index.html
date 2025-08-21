@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vodafone Wordsearch</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;}
+  body{background:#111;color:#fff;}
+
+  /* Header / Toolbar */
+  header{
+    position:fixed;top:0;left:0;width:100%;background:#000;color:#fff;
+    padding:10px 20px;display:flex;justify-content:space-between;align-items:center;z-index:1000;
+  }
+  header h1{font-size:1.4em;letter-spacing:0.5px;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .toolbar button{
+    background:#fff;color:#e60000;border:none;padding:8px 12px;border-radius:4px;
+    cursor:pointer;font-weight:bold;
+  }
+  .toolbar button:hover{background:#ffe6e6;}
+  #qr-inline{display:flex;align-items:center;gap:8px;margin-left:8px;}
+  #qr-inline img{width:90px;height:90px;border:1px solid #333;border-radius:4px;}
+
+  /* Layout */
+  .container{display:flex;margin-top:88px;padding:12px 20px;gap:12px;flex-wrap:wrap;}
+  .grid-wrap{flex:2;min-width:300px;display:flex;justify-content:center;align-items:flex-start;}
+
+  /* Grid (15x15) - square cells using padding-top trick (works everywhere) */
+  .grid{display:grid;grid-template-columns:repeat(15,1fr);gap:2px;background:#000;padding:2px;border-radius:6px;max-width:min(92vw,720px);width:100%;}
+  .cell{
+    position:relative;background:#000;color:#fff;border-radius:4px;cursor:pointer;user-select:none;
+  }
+  .cell::before{content:"";display:block;padding-top:100%;} /* square */
+  .cell > span{
+    position:absolute;inset:0;display:flex;justify-content:center;align-items:center;
+    font-weight:bold;font-size:clamp(12px,2.2vw,20px);
+  }
+  .cell.found{background:#e60000;color:#fff;}
+
+  /* Right panel */
+  .right{flex:1;min-width:280px;background:#111;border:1px solid #222;border-radius:6px;padding:10px;
+         display:flex;flex-direction:column;gap:10px;max-height:80vh;overflow:auto;}
+  .panel{background:#0b0b0b;border:1px solid #444;border-radius:4px;padding:8px;}
+  .panel h3{margin-bottom:6px;}
+  .list{list-style:none;}
+  .list li{padding:6px;border-radius:4px;cursor:pointer;}
+  .list li:hover{background:#1b1b1b;}
+  .list li.found{text-decoration:line-through;color:#aaa;}
+
+  /* Final phrase slots */
+  .slots{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+  .slots span{
+    display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;
+    border-bottom:2px solid #e60000;font-weight:bold;font-size:1.1em;color:#fff;
+  }
+
+  /* Status / winner */
+  .status{position:fixed;bottom:0;left:0;width:100%;background:#000;color:#fff;border-top:1px solid #444;
+          display:flex;justify-content:space-around;padding:8px 10px;font-weight:bold;}
+  #winner{position:fixed;top:56px;right:20px;background:#00b300;color:#fff;padding:10px 14px;border-radius:6px;
+          display:none;font-weight:bold;z-index:1000;}
+
+  @media(max-width:768px){
+    .container{flex-direction:column;}
+    .grid{max-width:96vw;}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Vodafone Wordsearch</h1>
+    <div class="toolbar">
+      <button id="shuffleBtn">Shuffle</button>
+      <button id="startBtn">Start</button>
+      <button id="stopBtn">Stop</button>
+      <button id="resetBtn">Reset</button>
+      <button id="addPlayerBtn">Add Player</button>
+      <button id="addTeamBtn">Add Team</button>
+      <button id="showQRBtn">Show QR</button>
+      <div id="qr-inline">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://vodafone.com&size=90x90" alt="QR Code">
+        <small>Scan to join</small>
+      </div>
+    </div>
+  </header>
+
+  <div id="winner"></div>
+
+  <div class="container">
+    <div class="grid-wrap"><div id="grid" class="grid"></div></div>
+
+    <aside class="right">
+      <div class="panel">
+        <h3>Leaderboard</h3>
+        <ul id="leaderboardList" class="list"></ul>
+      </div>
+
+      <div class="panel">
+        <h3>Words & Hints</h3>
+        <ul id="wordsList" class="list"></ul>
+      </div>
+
+      <div class="panel">
+        <h3>Final Phrase</h3>
+        <div id="finalPhraseSlots" class="slots"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="status">
+    <div>Words Left: <span id="wordsLeft">13</span></div>
+    <div>Timer: <span id="timer">00:00</span></div>
+    <div>Quickest Time: <span id="quickest">--:--</span></div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  /* ==== DATA ==== */
+  const WORDS = [
+    { word: 'CONNECT',     hint: 'To join together' },
+    { word: 'TEAM',        hint: 'Group working together' },
+    { word: 'LEADER',      hint: 'Person in charge' },
+    { word: 'COMMUNICATE', hint: 'Share information' },
+    { word: 'STRATEGY',    hint: 'Plan of action' },
+    { word: 'SUCCESS',     hint: 'Achievement' },
+    { word: 'PLAN',        hint: 'Outline steps' },
+    { word: 'INNOVATE',    hint: 'Create something new' },
+    { word: 'GOAL',        hint: 'Target to reach' },
+    { word: 'MOTIVATE',    hint: 'Encourage action' },
+    { word: 'INSPIRE',     hint: 'Stimulate creativity' },
+    { word: 'COLLABORATE', hint: 'Work together' },
+    { word: 'ACHIEVE',     hint: 'Reach an objective' }
+  ];
+  const FINAL_PHRASE = 'CSANDLCATEAM'.split(''); // revealed only (not in grid)
+  const SIZE = 15;
+
+  /* ==== STATE ==== */
+  const gridEl = document.getElementById('grid');
+  const wordsListEl = document.getElementById('wordsList');
+  const finalSlotsEl = document.getElementById('finalPhraseSlots');
+  const wordsLeftEl = document.getElementById('wordsLeft');
+  const timerEl = document.getElementById('timer');
+  const quickestEl = document.getElementById('quickest');
+  const winnerEl = document.getElementById('winner');
+
+  let grid = Array.from({length: SIZE}, () => Array(SIZE).fill(''));
+  let placements = {}; // { WORD: [{r,c}, ...] }
+  let wordsFound = 0;
+  let revealed = Array(FINAL_PHRASE.length).fill('');
+  let timerInt = null, seconds = 0;
+
+  /* ==== HELPERS ==== */
+  const inBounds = (r,c) => r>=0 && r<SIZE && c>=0 && c<SIZE;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  const DIRS = [
+    {dr:0, dc:1},   {dr:0, dc:-1},  // H, H back
+    {dr:1, dc:0},   {dr:-1, dc:0},  // V, V back
+    {dr:1, dc:1},   {dr:-1, dc:-1}, // diag down-right / up-left
+    {dr:1, dc:-1},  {dr:-1, dc:1}   // diag down-left / up-right
+  ];
+
+  function canPlace(word, r, c, dr, dc){
+    for(let i=0;i<word.length;i++){
+      const rr=r+dr*i, cc=c+dc*i;
+      if(!inBounds(rr,cc)) return false;
+      const ch = grid[rr][cc];
+      if(ch!=='' && ch!==word[i]) return false;
+    }
+    return true;
+  }
+
+  function placeWord(word){
+    const dirs = shuffle(DIRS.slice()); // allow diagonals (real wordsearch)
+    for(const {dr,dc} of dirs){
+      // compute valid start ranges for this direction
+      const rMin = dr<0 ? word.length-1 : 0;
+      const rMax = dr>0 ? SIZE - word.length : SIZE-1;
+      const cMin = dc<0 ? word.length-1 : 0;
+      const cMax = dc>0 ? SIZE - word.length : SIZE-1;
+
+      const rows = shuffle(Array.from({length: SIZE}, (_,i)=>i)).filter(r=> r>=rMin && r<=rMax);
+      const cols = shuffle(Array.from({length: SIZE}, (_,i)=>i)).filter(c=> c>=cMin && c<=cMax);
+
+      for(const r of rows){
+        for(const c of cols){
+          if(canPlace(word, r, c, dr, dc)){
+            const coords = [];
+            for(let i=0;i<word.length;i++){
+              const rr=r+dr*i, cc=c+dc*i;
+              grid[rr][cc] = word[i];
+              coords.push({r:rr,c:cc});
+            }
+            return coords;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function buildGrid(){
+    // reset
+    grid = Array.from({length: SIZE}, () => Array(SIZE).fill(''));
+    placements = {};
+    // place longer words first
+    const sorted = [...WORDS].sort((a,b)=> b.word.length - a.word.length);
+    for(const {word} of sorted){
+      const W = word.toUpperCase();
+      let coords = placeWord(W);
+      if(!coords){
+        // on failure, retry fresh (rare with 15x15)
+        return buildGrid();
+      }
+      placements[W] = coords;
+    }
+    // fill blanks
+    for(let r=0;r<SIZE;r++){
+      for(let c=0;c<SIZE;c++){
+        if(grid[r][c]==='') grid[r][c] = letters[Math.floor(Math.random()*letters.length)];
+      }
+    }
+  }
+
+  function renderGrid(){
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = `repeat(${SIZE},1fr)`;
+    for(let r=0;r<SIZE;r++){
+      for(let c=0;c<SIZE;c++){
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        const span = document.createElement('span');
+        span.textContent = grid[r][c];
+        cell.appendChild(span);
+        gridEl.appendChild(cell);
+      }
+    }
+  }
+
+  function renderWordsAndHints(){
+    wordsListEl.innerHTML = '';
+    WORDS.forEach(({word, hint})=>{
+      const li = document.createElement('li');
+      li.dataset.word = word.toUpperCase();
+      li.innerHTML = `<strong>${word.toUpperCase()}</strong> — <em style="color:#bbb;">${hint}</em>`;
+      wordsListEl.appendChild(li);
+    });
+  }
+
+  function renderFinalPhrase(){
+    finalSlotsEl.innerHTML = '';
+    FINAL_PHRASE.forEach(()=> finalSlotsEl.appendChild(document.createElement('span')));
+  }
+
+  function revealNextLetter(){
+    for(let i=0;i<revealed.length;i++){
+      if(revealed[i]===''){
+        revealed[i] = FINAL_PHRASE[i];
+        finalSlotsEl.children[i].textContent = FINAL_PHRASE[i];
+        break;
+      }
+    }
+  }
+
+  function highlightWord(word){
+    const coords = placements[word];
+    if(!coords) return;
+    coords.forEach(({r,c})=>{
+      const idx = r*SIZE + c;
+      gridEl.children[idx].classList.add('found');
+    });
+  }
+
+  function attachWordClicks(){
+    wordsListEl.querySelectorAll('li').forEach(li=>{
+      li.addEventListener('click', ()=>{
+        if(li.classList.contains('found')) return;
+        li.classList.add('found');
+        const w = li.dataset.word;
+        highlightWord(w);
+        wordsFound++;
+        wordsLeftEl.textContent = WORDS.length - wordsFound;
+        revealNextLetter();
+        checkWinner();
+      });
+    });
+  }
+
+  /* ==== Timer / Winner ==== */
+  function startTimer(){
+    if(timerInt) return;
+    timerInt = setInterval(()=>{
+      seconds++;
+      const m = String(Math.floor(seconds/60)).padStart(2,'0');
+      const s = String(seconds%60).padStart(2,'0');
+      timerEl.textContent = `${m}:${s}`;
+    },1000);
+  }
+  function stopTimer(){
+    clearInterval(timerInt); timerInt=null;
+  }
+  function checkWinner(){
+    if(wordsFound===WORDS.length){
+      stopTimer();
+      const time = timerEl.textContent;
+      winnerEl.textContent = `Winner: Team/Player in ${time}`;
+      winnerEl.style.display = 'block';
+      try{
+        const prev = localStorage.getItem('quickestTime');
+        if(!prev || time < prev) localStorage.setItem('quickestTime', time);
+        quickestEl.textContent = localStorage.getItem('quickestTime') || '--:--';
+      }catch(e){}
+    }
+  }
+  function resetGame(){
+    stopTimer();
+    seconds=0; timerEl.textContent='00:00';
+    wordsFound=0; wordsLeftEl.textContent=WORDS.length;
+    revealed = Array(FINAL_PHRASE.length).fill('');
+    winnerEl.style.display='none';
+    buildGrid(); renderGrid();
+    renderWordsAndHints(); renderFinalPhrase();
+    attachWordClicks();
+  }
+
+  /* ==== Buttons ==== */
+  document.getElementById('shuffleBtn').addEventListener('click', resetGame);
+  document.getElementById('startBtn').addEventListener('click', startTimer);
+  document.getElementById('stopBtn').addEventListener('click', stopTimer);
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  document.getElementById('addPlayerBtn').addEventListener('click', ()=>{
+    const name = prompt('Enter player name:');
+    if(name){
+      const li = document.createElement('li');
+      li.textContent = name;
+      document.getElementById('leaderboardList').appendChild(li);
+    }
+  });
+  document.getElementById('addTeamBtn').addEventListener('click', ()=>{
+    const name = prompt('Enter team name:');
+    if(name){
+      const li = document.createElement('li');
+      li.textContent = name;
+      document.getElementById('leaderboardList').appendChild(li);
+    }
+  });
+  document.getElementById('showQRBtn').addEventListener('click', ()=>{
+    const qr = document.getElementById('qr-inline');
+    qr.style.display = (qr.style.display === 'none') ? 'flex' : 'none';
+  });
+
+  /* ==== Init ==== */
+  try{ quickestEl.textContent = localStorage.getItem('quickestTime') || '--:--'; }catch(e){}
+  buildGrid(); renderGrid();
+  renderWordsAndHints(); renderFinalPhrase();
+  attachWordClicks();
+  wordsLeftEl.textContent = WORDS.length;
+});
+</script>
+</body>
+</html>
