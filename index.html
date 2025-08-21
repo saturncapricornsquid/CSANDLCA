@@ -2,219 +2,303 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vodafone Wordsearch</title>
-<style>
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: #fff;
-  }
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Vodafone Wordsearch</title> <style>
+    /* Reset & body */
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background: #f7f7f7; }
 
-  header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: #e60000;
-    color: #fff;
-    z-index: 1000;
-    padding: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  }
+    /* Header */
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #e60000;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 1000;
+    }
+    header h1 { font-size: 1.5em; }
 
-  header h1 {
-    margin: 0;
-    font-size: 1.5em;
-  }
+    /* Toolbar */
+    .toolbar button {
+        background: #fff;
+        color: #e60000;
+        border: none;
+        padding: 8px 12px;
+        margin: 0 4px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    .toolbar button:hover { background: #ffe6e6; }
 
-  header .subtitle {
-    font-size: 0.85em;
-    opacity: 0.9;
-    margin: 2px 0 5px 0;
-  }
+    /* Layout */
+    .container {
+        display: flex;
+        margin-top: 80px;
+        padding: 10px 20px;
+        gap: 10px;
+    }
 
-  .toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 5px;
-  }
+    /* Grid */
+    .grid-container {
+        flex: 2;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 2px;
+        justify-items: center;
+        align-items: center;
+    }
+    .grid-cell {
+        width: 30px;
+        height: 30px;
+        background: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        cursor: pointer;
+        user-select: none;
+        border-radius: 4px;
+    }
+    .grid-cell.found { background: #e60000; color: #fff; }
 
-  button {
-    background: #111;
-    border: none;
-    padding: 10px 14px;
-    color: #fff;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    flex: 1 1 auto;
-    min-width: 80px;
-  }
+    /* Right Panel */
+    .right-panel {
+        flex: 1;
+        background: #fff;
+        padding: 10px;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .hints, .words, .final-phrase, .leaderboard {
+        border: 1px solid #ddd;
+        padding: 8px;
+        border-radius: 4px;
+    }
+    .hints li, .words li { cursor: pointer; margin: 4px 0; }
+    .hints li.found, .words li.found { text-decoration: line-through; color: #888; }
 
-  button#startBtn { background: #e60000; }
-  button#startBtn:hover { background: #b50000; }
-  button:hover { background: #333; }
+    .final-phrase span {
+        display: inline-block;
+        width: 25px;
+        height: 25px;
+        border-bottom: 2px solid #e60000;
+        text-align: center;
+        margin: 2px;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
 
-  #statusBar {
-    background: #222;
-    padding: 6px 10px;
-    border-radius: 5px;
-    font-size: 0.85em;
-    margin-top: 5px;
-    text-align: center;
-  }
-  #statusBar span { font-weight: bold; }
+    .status-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #fff;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0;
+        font-weight: bold;
+    }
 
-  #qrContainer {
-    display: inline-block;
-    text-align: center;
-    margin-top: 5px;
-  }
-  #qrContainer img {
-    width: 80px;
-    height: 80px;
-    border: 3px solid #fff;
-    border-radius: 8px;
-  }
+    /* QR Code */
+    #qr-container { margin-top: 10px; text-align: center; }
+    #qr-container img { width: 120px; height: 120px; }
 
-  .container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    padding: 180px 10px 20px; /* space for header */
-  }
+    /* Winner Banner */
+    #winner {
+        position: fixed;
+        top: 50px;
+        right: 20px;
+        background: #00b300;
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 6px;
+        display: none;
+        font-weight: bold;
+        z-index: 1000;
+    }
 
-  #puzzleGrid {
-    display: grid;
-    grid-template-columns: repeat(15, 1fr);
-    gap: 2px;
-    width: 100%;
-    max-width: 600px;
-  }
-
-  .cell {
-    aspect-ratio: 1/1;
-    background: #222;
-    border: 1px solid #444;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-weight: bold;
-    font-size: 1em;
-    cursor: pointer;
-  }
-
-  .cell.found { background: #e60000; color: #fff; }
-
-  .card {
-    background: #1a1a1a;
-    padding: 10px;
-    border-radius: 6px;
-    width: 300px;
-  }
-  .card h3 { margin-top: 0; font-size: 1em; }
-
-  ul { padding-left: 20px; margin: 5px 0; }
-
-  @media (max-width: 768px) {
-    .toolbar { flex-direction: column; align-items: flex-start; }
-    #statusBar { font-size: 0.75em; padding: 4px 6px; }
-    .card { width: 90%; }
-    #puzzleGrid { max-width: 90vw; gap: 1px; }
-    .cell { font-size: 0.9em; }
-    #qrContainer img { width: 60px; height: 60px; }
-  }
-
-  @media (max-width: 480px) {
-    button { font-size: 0.85em; padding: 12px; min-width: 60px; }
-    .card { padding: 8px; }
-    .cell { font-size: 0.8em; }
-  }
+    /* Mobile */
+    @media (max-width: 768px) {
+        .container { flex-direction: column; }
+        .grid-container { grid-template-columns: repeat(8, 1fr); }
+    }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Vodafone Wordsearch</h1>
-  <div class="subtitle">Multiplayer • Final phrase hidden</div>
-  <div class="toolbar">
-    <button id="shuffleBtn">Shuffle</button>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Stop</button>
-    <button id="resetBtn">Reset</button>
-    <button id="addPlayerBtn">Add Player</button>
-    <button id="addTeamBtn">Add Team</button>
-    <button id="showQRBtn">Show QR</button>
-  </div>
-  <div id="statusBar">
-    Words left: <span id="wordsLeft">13</span> | Time: <span id="timer">10:00</span> | Quickest: <span id="quickest">--:--</span>
-  </div>
-  <div id="qrContainer">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://saturncapricornsquid.github.io/CSANDLCA/" alt="QR Code">
-    <div>📱 Scan Me</div>
-  </div>
+    <h1>Vodafone Wordsearch</h1>
+    <div class="toolbar">
+        <button id="shuffleBtn">Shuffle</button>
+        <button id="startBtn">Start</button>
+        <button id="stopBtn">Stop</button>
+        <button id="resetBtn">Reset</button>
+        <button id="addPlayerBtn">Add Player</button>
+        <button id="addTeamBtn">Add Team</button>
+        <button id="showQRBtn">Show QR</button>
+    </div>
 </header>
 
+<div id="winner"></div>
+
 <div class="container">
-  <div id="puzzleGrid"></div>
+    <div class="grid-container" id="grid">
+        <!-- Grid cells generated dynamically -->
+    </div>
 
-  <div class="card">
-    <h3>Leaderboard</h3>
-    <ul id="leaderboard"><li>No teams yet 🏆</li></ul>
-  </div>
-
-  <div class="card">
-    <h3>Final Phrase</h3>
-    <div id="finalPhraseSlots"></div>
-    <button id="claimBtn">Claim Final Phrase</button>
-  </div>
-
-  <div class="card">
-    <h3>Words to Find</h3>
-    <ul id="wordsList"></ul>
-  </div>
+    <div class="right-panel">
+        <div class="hints">
+            <h3>Hints</h3>
+            <ul id="hintsList">
+                <!-- Hints + words -->
+            </ul>
+        </div>
+        <div class="words">
+            <h3>Words</h3>
+            <ul id="wordsList">
+                <!-- Words -->
+            </ul>
+        </div>
+        <div class="final-phrase">
+            <h3>Final Phrase</h3>
+            <div id="finalPhraseSlots">
+                <!-- Final phrase letters revealed -->
+            </div>
+        </div>
+        <div class="leaderboard">
+            <h3>Leaderboard</h3>
+            <ul id="leaderboardList">
+                <!-- Leaderboard entries -->
+            </ul>
+        </div>
+        <div id="qr-container" style="display:none;">
+            <img src="https://eur03.safelinks.protection.outlook.com/?url=https%3A%2F%2Fapi.qrserver.com%2Fv1%2Fcreate-qr-code%2F%3Fdata%3Dhttps%3A%2F%2Fvodafone.com%26size%3D120x120&data=05%7C02%7Cjoanna.hopwood%40vodafone.com%7Ce650d857123c44bb08a308dde08e3de1%7C68283f3b84874c86adb3a5228f18b893%7C0%7C0%7C638913623751784586%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=G15sAGAGLANS%2BDN8hz2LnkoUgfROrk9scLhTyIk4oTI%3D&reserved=0" alt="QR Code">
+        </div>
+    </div>
 </div>
 
+<div class="status-bar">
+    <div>Words Left: <span id="wordsLeft">13</span></div>
+    <div>Timer: <span id="timer">00:00</span></div>
+    <div>Quickest Time: <span id="quickest">--:--</span></div> </div>
+
 <script>
-const gridSize = 15;
-const words = ["ACHIEVEMENT","ALLOCATION","AUDIT","CORE","CRQ","DELIVERY","ESCALATION","LCA","METRIC","NCT","SITETRACKER","TESTING","TEAM"];
+    // Sample words + hints
+    const words = [
+        { word: 'CONNECT', hint: 'To join together' },
+        { word: 'TEAM', hint: 'Group working together' },
+        { word: 'LEADER', hint: 'Person in charge' },
+        { word: 'COMMUNICATE', hint: 'Share information' },
+        { word: 'STRATEGY', hint: 'Plan of action' },
+        { word: 'SUCCESS', hint: 'Achievement' },
+        { word: 'PLAN', hint: 'Outline steps' },
+        { word: 'INNOVATE', hint: 'Create something new' },
+        { word: 'GOAL', hint: 'Target to reach' },
+        { word: 'MOTIVATE', hint: 'Encourage action' },
+        { word: 'INSPIRE', hint: 'Stimulate creativity' },
+        { word: 'COLLABORATE', hint: 'Work together' },
+        { word: 'ACHIEVE', hint: 'Reach an objective' }
+    ];
 
-const puzzleGrid = document.getElementById("puzzleGrid");
-const wordsLeftDisplay = document.getElementById("wordsLeft");
-wordsLeftDisplay.textContent = words.length;
+    const finalPhrase = 'CSANDLCATEAM'.split('');
+    let revealedLetters = Array(finalPhrase.length).fill('');
+    let wordsFound = 0;
 
-function generateGrid() {
-  puzzleGrid.innerHTML = "";
-  for (let i=0;i<gridSize*gridSize;i++){
-    const cell = document.createElement("div");
-    cell.classList.add("cell");
-    cell.textContent = String.fromCharCode(65+Math.floor(Math.random()*26));
-    puzzleGrid.appendChild(cell);
-  }
-}
-generateGrid();
+    // Populate hints & words lists
+    const hintsList = document.getElementById('hintsList');
+    const wordsList = document.getElementById('wordsList');
+    words.forEach((w, i) => {
+        const hintLi = document.createElement('li');
+        hintLi.textContent = w.hint;
+        hintLi.dataset.index = i;
+        hintsList.appendChild(hintLi);
 
-const wordsList = document.getElementById("wordsList");
-words.forEach(word => {
-  const li = document.createElement("li");
-  li.textContent = word;
-  wordsList.appendChild(li);
-});
+        const wordLi = document.createElement('li');
+        wordLi.textContent = w.word;
+        wordLi.dataset.index = i;
+        wordsList.appendChild(wordLi);
+    });
 
-const qrContainer = document.getElementById("qrContainer");
-const showQRBtn = document.getElementById("showQRBtn");
-const startBtn = document.getElementById("startBtn");
-const stopBtn = document.getElementById("stopBtn");
-const resetBtn = document.getElementById("resetBtn");
+    // Populate final phrase slots
+    const finalSlots = document.getElementById('finalPhraseSlots');
+    finalPhrase.forEach(() => {
+        const span = document.createElement('span');
+        finalSlots.appendChild(span);
+    });
 
-showQRBtn.addEventListener("click", ()=>{ qrContainer.style.display = qrContainer.style.display==='block'?'none':'block'; });
-startBtn.addEventListener("click", ()=>qrContainer.style.display='none');
-stopBtn.addEventListener("click", ()=>qrContainer.style.display='block');
-resetBtn.addEventListener("click", ()=>qrContainer.style.display='block');
+    // QR toggle
+    document.getElementById('showQRBtn').addEventListener('click', () => {
+        const qr = document.getElementById('qr-container');
+        qr.style.display = qr.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Grid generation
+    const grid = document.getElementById('grid');
+    const gridSize = 10;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for(let i=0; i<gridSize*gridSize; i++){
+        const cell = document.createElement('div');
+        cell.classList.add('grid-cell');
+        cell.textContent = letters[Math.floor(Math.random()*letters.length)];
+        grid.appendChild(cell);
+    }
+
+    // Timer
+    let timerInterval, seconds = 0;
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            seconds++;
+            const mins = String(Math.floor(seconds/60)).padStart(2,'0');
+            const secs = String(seconds%60).padStart(2,'0');
+            document.getElementById('timer').textContent = `${mins}:${secs}`;
+        }, 1000);
+    }
+    function stopTimer() { clearInterval(timerInterval); }
+
+    // Toolbar buttons
+    document.getElementById('startBtn').addEventListener('click', startTimer);
+    document.getElementById('stopBtn').addEventListener('click', stopTimer);
+    document.getElementById('resetBtn').addEventListener('click', () => location.reload());
+
+    // Word click logic
+    wordsList.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', () => {
+            if(!li.classList.contains('found')){
+                li.classList.add('found');
+                wordsFound++;
+                document.getElementById('wordsLeft').textContent = words.length - wordsFound;
+
+                // Reveal a letter in final phrase
+                for(let i=0;i<revealedLetters.length;i++){
+                    if(revealedLetters[i]===''){
+                        revealedLetters[i] = finalPhrase[i];
+                        finalSlots.children[i].textContent = finalPhrase[i];
+                        break;
+                    }
+                }
+
+                // Winner check
+                if(wordsFound===words.length){
+                    document.getElementById('winner').textContent = `Winner: Team / Player in ${document.getElementById('timer').textContent}`;
+                    document.getElementById('winner').style.display = 'block';
+                }
+            }
+        });
+    });
 </script>
+
 </body>
 </html>
