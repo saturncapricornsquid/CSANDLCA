@@ -10,37 +10,39 @@
   --grid:#2b2e33; --chip:#1f2226;
 }
 *{box-sizing:border-box;}
-body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;}
-.container{max-width:1200px;margin:0 auto;padding:12px;padding-bottom:220px;}
-.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
+body, html{margin:0; padding:0; height:100%; width:100%; display:flex; flex-direction:column; background:var(--bg); color:#fff; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px; background:var(--panel);}
 .brand{display:flex;gap:12px;align-items:center;}
 .logo{width:36px;height:36px;border-radius:50%;background:var(--voda-red);}
 .title{font-weight:900;font-size:20px;}
 .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-.btn, #hudTimer{border:none;padding:6px 10px;border-radius:8px;font-weight:700;cursor:pointer;background:var(--voda-red);color:#fff;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;font-size:14px;}
-.card{background:var(--panel);border:1px solid #24262b;border-radius:12px;margin-bottom:8px;}
-.card-header{padding:10px 12px;border-bottom:1px solid #24262b;font-weight:800;font-size:16px;}
-.card-content{padding:10px;}
-.grid{display:grid;gap:1px;user-select:none;}
+.btn, #hudTimer{border:none;padding:6px 10px;border-radius:8px;font-weight:700;cursor:pointer;background:var(--voda-red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
+.container{flex:1; display:flex; overflow:hidden; padding:8px; gap:8px;}
+.grid-section{flex:1; display:grid; justify-content:center; align-items:center; overflow:auto;}
+.grid{display:grid; gap:1px;}
 .cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed;}
 .cell.sel{background:rgba(230,0,0,0.25);}
 .cell.found{background:var(--voda-red);color:#fff;}
-.list{list-style:none;padding:0;margin:0;display:grid;gap:4px;}
+.side-panel{width:220px; display:flex; flex-direction:column; gap:8px; overflow:auto;}
+.card{background:var(--panel);border:1px solid #24262b;border-radius:12px;}
+.card-header{padding:8px 10px;border-bottom:1px solid #24262b;font-weight:800;font-size:16px;}
+.card-content{padding:8px; display:flex; flex-direction:column; gap:6px;}
+.list{list-style:none;padding:0;margin:0;display:grid;gap:4px; overflow:auto;}
 .list li{padding:4px;border:1px solid #2a2c31;border-radius:6px;background:#0f1013;font-size:14px;}
 .list li.found{color:var(--muted);text-decoration:line-through;}
-.bank{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border:1px dashed #2a2c31;border-radius:8px;background:#0c0d10;}
-.chip{min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip);font-size:14px;}
-.slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
-.slot{width:38px;height:38px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:16px;color:#6b7280;border-radius:6px;}
+.bank{display:flex;gap:6px;flex-wrap:wrap;padding:4px;border:1px dashed #2a2c31;border-radius:6px;background:#0c0d10;}
+.chip{min-width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip);font-size:14px;}
+.slots{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.slot{width:32px;height:32px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:14px;color:#6b7280;border-radius:6px;}
 .slot.fill{border-style:solid;color:#fff;background:#1a1c20;}
-.leaderboard{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);width:95%;max-width:1200px;background:var(--panel);border-radius:12px;padding:10px;z-index:999;}
+.leaderboard{position:fixed;bottom:0;left:0;width:100%;background:var(--panel);padding:8px; z-index:999;}
 .leader-title{font-weight:800;margin-bottom:4px;font-size:16px;}
-.leader-row{background:var(--chip);padding:5px 8px;border-radius:6px;margin-top:3px;font-size:13px;display:flex;justify-content:space-between;}
+.leader-row{background:var(--chip);padding:4px 6px;border-radius:6px;margin-top:3px;font-size:13px;display:flex;justify-content:space-between;}
 .leader-row.current{background:var(--voda-red);color:#fff;}
 #qrPanel{position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:6px;border-radius:8px;text-align:center;box-shadow:0 0 8px rgba(0,0,0,0.2);}
 #qrPanel div{margin-top:4px;font-size:12px;color:#555;}
 .hidden{display:none !important;}
-@media(max-width:800px){.card-content{display:block !important;}.grid{margin-bottom:8px;}}
+@media(max-width:900px){.container{flex-direction:column;}.side-panel{width:100%;}}
 </style>
 </head>
 <body>
@@ -50,29 +52,30 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   <div>📱 Scan Me</div>
 </div>
 
-<div class="container">
-  <div class="topbar">
-    <div class="brand"><div class="logo"></div><div class="title">Vodafone Wordsearch</div></div>
-    <div class="toolbar">
-      <button class="btn" id="btnShuffle">Shuffle</button>
-      <button class="btn" id="btnStart">Start</button>
-      <button class="btn" id="btnStop">Stop</button>
-      <button class="btn" id="btnReset">Reset</button>
-      <button class="btn" id="btnNewPlayer">Add Player</button>
-      <button class="btn" id="btnNewTeam">Add Team</button>
-      <button class="btn" id="btnToggleQR">Hide QR</button>
-      <span id="hudTimer">10:00</span>
-    </div>
+<div class="topbar">
+  <div class="brand"><div class="logo"></div><div class="title">Vodafone Wordsearch</div></div>
+  <div class="toolbar">
+    <button class="btn" id="btnShuffle">Shuffle</button>
+    <button class="btn" id="btnStart">Start</button>
+    <button class="btn" id="btnStop">Stop</button>
+    <button class="btn" id="btnReset">Reset</button>
+    <button class="btn" id="btnNewPlayer">Add Player</button>
+    <button class="btn" id="btnNewTeam">Add Team</button>
+    <button class="btn" id="btnToggleQR">Hide QR</button>
+    <span id="hudTimer">10:00</span>
   </div>
+</div>
 
-  <div class="card">
-    <div class="card-header">Puzzle</div>
-    <div class="card-content" style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-      <div class="grid" id="grid"></div>
-      <div style="min-width:180px;flex-shrink:0;">
-        <div class="card"><div class="card-header">Final Phrase</div><div class="card-content"><div class="bank" id="bank"></div><div class="slots" id="slotsWrap"></div></div></div>
-        <div class="card"><div class="card-header">Words to Find</div><div class="card-content"><ul class="list" id="wordList"></ul></div></div>
-      </div>
+<div class="container">
+  <div class="grid-section">
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="side-panel">
+    <div class="card"><div class="card-header">Final Phrase</div>
+      <div class="card-content"><div class="bank" id="bank"></div><div class="slots" id="slotsWrap"></div></div>
+    </div>
+    <div class="card"><div class="card-header">Words to Find</div>
+      <div class="card-content"><ul class="list" id="wordList"></ul></div>
     </div>
   </div>
 </div>
@@ -84,7 +87,7 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 new QRCode(document.getElementById("qrcode"),{text:"https://saturncapricornsquid.github.io/CSANDLCA/",width:100,height:100,colorDark:"#E60000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.H});
 const GRID_SIZE=15,WORDS=[{word:"CORE",hint:"Backbone"},{word:"SITETRACKER",hint:"Tool"},{word:"ALLOCATION",hint:"Assigning"}],TARGET_PHRASE="CSANDLCA";
 let players=[{name:"Player 1",points:0},{name:"Player 2",points:0}],currentPlayerIndex=0;
-let board=[],placedWords=[],slotLetters=Array.from(TARGET_PHRASE,ch=>ch===' '? ' ':'');
+let board=[],slotLetters=Array.from(TARGET_PHRASE,ch=>ch===' '? ' ':'');
 const $=id=>document.getElementById(id);
 function rand(n){return Math.floor(Math.random()*n);}
 function fmtTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+":"+String(sec%60).padStart(2,'0');}
