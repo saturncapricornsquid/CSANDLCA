@@ -94,6 +94,8 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   box-shadow:0 0 10px rgba(0,0,0,0.2);
 }
 #qrPanel div { margin-top:4px; font-size:12px; color:#555; }
+
+.hidden { display: none !important; }
 </style>
 </head>
 <body>
@@ -118,6 +120,7 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
       <button class="btn" id="btnReset">Reset</button>
       <button class="btn" id="btnNewPlayer">Add Player</button>
       <button class="btn" id="btnNewTeam">Add Team</button>
+      <button class="btn" id="btnToggleQR">Hide QR</button>
       <span id="hudTimer">10:00</span>
     </div>
   </div>
@@ -186,7 +189,6 @@ let board = [], placedWords=[], slotLetters=Array.from(TARGET_PHRASE, ch=>ch==='
 // Utils
 const $ = id => document.getElementById(id);
 function rand(n){return Math.floor(Math.random()*n);}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 function fmtTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+":"+String(sec%60).padStart(2,'0');}
 
 // Board
@@ -237,9 +239,16 @@ function selectCell(r,c){
 
 // Buttons
 $("btnShuffle").onclick=newBoard;
-$("btnStart").onclick=startTimer;
+$("btnStart").onclick=()=>{
+  startTimer();
+  $("qrPanel").classList.add("hidden"); // hide QR when game starts
+};
 $("btnStop").onclick=stopTimer;
-$("btnReset").onclick=()=>{resetTimer(); newBoard();};
+$("btnReset").onclick=()=>{resetTimer(); newBoard(); $("qrPanel").classList.remove("hidden");};
+$("btnToggleQR").onclick=()=>{
+  $("qrPanel").classList.toggle("hidden");
+  $("btnToggleQR").textContent = $("qrPanel").classList.contains("hidden") ? "Show QR" : "Hide QR";
+};
 
 // Init
 newBoard();
