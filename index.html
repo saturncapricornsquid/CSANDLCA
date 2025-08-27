@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -13,14 +12,45 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .container{max-width:1200px;margin:0 auto;padding:16px}
-  .topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
   .brand{display:flex;gap:12px;align-items:center}
   .logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
   .title{font-weight:900;font-size:22px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
-  .btn-primary{background:var(--voda-red);color:#fff}
-  .btn-ghost{background:#1a1c20;color:#fff}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+
+  /* Buttons, timer, and leaderboard header all styled the same */
+  .btn, #hudTimer, .leader-title {
+    border:none;
+    padding:8px 12px;
+    border-radius:10px;
+    font-weight:700;
+    cursor:pointer;
+    background:var(--voda-red);
+    color:#fff;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    white-space:nowrap;
+  }
+
+  /* Leaderboard inline */
+  .leader-inline{
+    margin-left:16px;
+    max-height:120px;
+    overflow-y:auto;
+    min-width:180px;
+  }
+  .leader-inline .leader-row{
+    font-size:13px;
+    padding:4px 6px;
+    margin-top:3px;
+    border:1px solid #2a2c31;
+    border-radius:8px;
+    background:#0f1013;
+    display:flex;
+    justify-content:space-between;
+  }
+
   .card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px}
   .card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800}
   .card-content{padding:14px}
@@ -37,57 +67,63 @@
   .slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px}
   .slot.fill{border-style:solid;color:#fff;background:#1a1c20}
-  .leader-row{display:flex;justify-content:space-between;padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013;margin-top:4px}
 </style>
 </head>
 <body>
 <!-- QR Code Panel -->
 <div id="qrPanel" style="position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:8px;border-radius:8px;text-align:center;box-shadow:0 0 10px rgba(0,0,0,0.2);">
-<div id="qrcode"></div>
-<div style="font-size:12px;color:#555;margin-top:4px;">📱 Scan Me</div>
+  <div id="qrcode"></div>
+  <div style="font-size:12px;color:#555;margin-top:4px;">📱 Scan Me</div>
 </div>
+
 <div class="container">
-<div class="topbar">
-<div class="brand">
-<div class="logo"></div>
-<div class="title">Vodafone Wordsearch</div>
-</div>
-<div class="toolbar">
-<button class="btn btn-ghost" id="btnShuffle">Shuffle</button>
-<button class="btn btn-primary" id="btnStart">Start</button>
-<button class="btn btn-ghost" id="btnStop">Stop</button>
-<button class="btn btn-ghost" id="btnReset">Reset</button>
-<button class="btn btn-ghost" id="btnNewPlayer">Add Player</button>
-<button class="btn btn-ghost" id="btnNewTeam">Add Team</button>
-<span id="hudTimer">10:00</span>
-</div>
-</div>
-<div class="card">
-<div class="card-header">Puzzle</div>
-<div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
-<div class="grid" id="grid"></div>
-<div><div class="card">
-<div class="card-header">Final Phrase</div>
-<div class="card-content">
-<div class="bank" id="bank"></div>
-<div class="slots" id="slotsWrap"></div>
-</div>
-</div><div class="card">
-<div class="card-header">Words to Find</div>
-<div class="card-content">
-<ul class="list" id="wordList"></ul>
-</div>
-</div></div></div>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo"></div>
+      <div class="title">Vodafone Wordsearch</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="btnShuffle">Shuffle</button>
+      <button class="btn" id="btnStart">Start</button>
+      <button class="btn" id="btnStop">Stop</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnNewPlayer">Add Player</button>
+      <button class="btn" id="btnNewTeam">Add Team</button>
+      <span id="hudTimer">10:00</span>
+
+      <!-- Leaderboard inline -->
+      <div class="leader-inline">
+        <div class="leader-title">Leaderboard</div>
+        <div id="leader"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Puzzle Section -->
+  <div class="card">
+    <div class="card-header">Puzzle</div>
+    <div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
+      <div class="grid" id="grid"></div>
+      <div>
+        <div class="card">
+          <div class="card-header">Final Phrase</div>
+          <div class="card-content">
+            <div class="bank" id="bank"></div>
+            <div class="slots" id="slotsWrap"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">Words to Find</div>
+          <div class="card-content">
+            <ul class="list" id="wordList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-
-<div class="card">
-<div class="card-header">Leaderboard</div>
-<div class="card-content">
-<div id="leader"></div>
-</div>
-</div>
-</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // QR Code fixed to GitHub Pages
@@ -118,7 +154,7 @@ const WORDS = [
   {word:"ACHIEVEMENTS", hint:"Successful delivery milestone like completing a logical configuration or resolving a critical fault"},
   {word:"METRIC", hint:"Performance indicators used to track rollout speed, fault resolution, or service uptime"},
 ];
-// Corrected final phrase (slots hidden at start)
+// Corrected final phrase
 const TARGET_PHRASE = "CSANDLCA";
 
 // ============================
@@ -224,6 +260,7 @@ $("btnStop").onclick=stopTimer;
 $("btnReset").onclick=()=>{resetTimer();newBoard();renderSlots();renderBank();};
 
 function boot(){newBoard();renderSlots();renderBank();resetTimer();}
-boot();</script>
+boot();
+</script>
 </body>
 </html>
