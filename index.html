@@ -10,24 +10,24 @@
   --grid:#2b2e33; --chip:#1f2226;
 }
 *{box-sizing:border-box;}
-body, html{margin:0; padding:0; height:100%; width:100%; display:flex; flex-direction:column; background:var(--bg); color:#fff; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;}
-.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px; background:var(--panel);}
+body, html{margin:0;padding:0;height:100%;display:flex;flex-direction:column;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:8px;background:var(--panel);}
 .brand{display:flex;gap:12px;align-items:center;}
 .logo{width:36px;height:36px;border-radius:50%;background:var(--voda-red);}
 .title{font-weight:900;font-size:20px;}
 .toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .btn, #hudTimer{border:none;padding:6px 10px;border-radius:8px;font-weight:700;cursor:pointer;background:var(--voda-red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px;}
-.container{flex:1; display:flex; overflow:hidden; padding:8px; gap:8px;}
-.grid-section{flex:1; display:grid; justify-content:center; align-items:center; overflow:auto;}
-.grid{display:grid; gap:1px;}
-.cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed;}
+.container{flex:1;display:flex;overflow:hidden;padding:8px;gap:8px;}
+.grid-section{flex:1;display:flex;justify-content:center;align-items:center;}
+.grid{display:grid;gap:1px;width:100%;height:100%;}
+.cell{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:calc(14px + 0.5vw);border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed;}
 .cell.sel{background:rgba(230,0,0,0.25);}
 .cell.found{background:var(--voda-red);color:#fff;}
-.side-panel{width:220px; display:flex; flex-direction:column; gap:8px; overflow:auto;}
-.card{background:var(--panel);border:1px solid #24262b;border-radius:12px;}
+.side-panel{width:220px;display:flex;flex-direction:column;gap:8px;}
+.card{background:var(--panel);border:1px solid #24262b;border-radius:12px;flex-shrink:0;}
 .card-header{padding:8px 10px;border-bottom:1px solid #24262b;font-weight:800;font-size:16px;}
-.card-content{padding:8px; display:flex; flex-direction:column; gap:6px;}
-.list{list-style:none;padding:0;margin:0;display:grid;gap:4px; overflow:auto;}
+.card-content{padding:8px;display:flex;flex-direction:column;gap:6px;}
+.list{list-style:none;padding:0;margin:0;display:grid;gap:4px;max-height:40vh;overflow-y:auto;}
 .list li{padding:4px;border:1px solid #2a2c31;border-radius:6px;background:#0f1013;font-size:14px;}
 .list li.found{color:var(--muted);text-decoration:line-through;}
 .bank{display:flex;gap:6px;flex-wrap:wrap;padding:4px;border:1px dashed #2a2c31;border-radius:6px;background:#0c0d10;}
@@ -85,28 +85,66 @@ body, html{margin:0; padding:0; height:100%; width:100%; display:flex; flex-dire
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 new QRCode(document.getElementById("qrcode"),{text:"https://saturncapricornsquid.github.io/CSANDLCA/",width:100,height:100,colorDark:"#E60000",colorLight:"#fff",correctLevel:QRCode.CorrectLevel.H});
-const GRID_SIZE=15,WORDS=[{word:"CORE",hint:"Backbone"},{word:"SITETRACKER",hint:"Tool"},{word:"ALLOCATION",hint:"Assigning"}],TARGET_PHRASE="CSANDLCA";
+
+const GRID_SIZE=15;
+const WORDS=[
+  {word:"CORE",hint:"Backbone of network layer"},
+  {word:"SITETRACKER",hint:"Deployment operations tool"},
+  {word:"ALLOCATION",hint:"Assigning resources"},
+  {word:"NCT",hint:"System for site allocation"},
+  {word:"DELIVERY",hint:"Provisioning circuits"},
+  {word:"LCA",hint:"Pre-build setup team"},
+  {word:"CRQ",hint:"Formal change request"},
+  {word:"AUDIT",hint:"Ensure accurate site data"},
+  {word:"TESTING",hint:"Verify configuration or service"},
+  {word:"ESCALATION",hint:"Raise issues to higher support"},
+  {word:"ACHIEVEMENTS",hint:"Successful delivery milestones"},
+  {word:"METRIC",hint:"Performance indicators"}
+];
+const TARGET_PHRASE="CSANDLCA";
 let players=[{name:"Player 1",points:0},{name:"Player 2",points:0}],currentPlayerIndex=0;
-let board=[],slotLetters=Array.from(TARGET_PHRASE,ch=>ch===' '? ' ':'');
+let board=[],slotLetters=Array.from(TARGET_PHRASE,ch=>ch===' '?' ':'');
 const $=id=>document.getElementById(id);
+
 function rand(n){return Math.floor(Math.random()*n);}
 function fmtTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+":"+String(sec%60).padStart(2,'0');}
-function newBoard(){board=Array.from({length:GRID_SIZE},()=>Array.from({length:GRID_SIZE},()=>({letter:String.fromCharCode(65+rand(26)),found:false})));renderBoard();renderWords();renderSlots();renderBank();updateLeaderboard();}
-function renderBoard(){const g=$("grid");g.style.gridTemplateColumns=`repeat(${GRID_SIZE},32px)`;g.innerHTML="";board.forEach((row,r)=>row.forEach((cell,c)=>{const d=document.createElement("div");d.className="cell";d.dataset.r=r;d.dataset.c=c;d.textContent=cell.letter;d.onclick=()=>selectCell(r,c);g.appendChild(d);}));}
+
+function newBoard(){
+  board=Array.from({length:GRID_SIZE},()=>Array.from({length:GRID_SIZE},()=>({letter:String.fromCharCode(65+rand(26)),found:false})));
+  renderBoard(); renderWords(); renderSlots(); updateLeaderboard();
+}
+
+function renderBoard(){
+  const g=$("grid");
+  g.innerHTML="";
+  g.style.gridTemplateColumns=`repeat(${GRID_SIZE},1fr)`;
+  g.style.gridTemplateRows=`repeat(${GRID_SIZE},1fr)`;
+  board.forEach((row,r)=>row.forEach((cell,c)=>{
+    const d=document.createElement("div");
+    d.className="cell";
+    d.dataset.r=r; d.dataset.c=c;
+    d.textContent=cell.letter;
+    d.onclick=()=>selectCell(r,c);
+    g.appendChild(d);
+  }));
+}
+
 function renderWords(){const ul=$("wordList");ul.innerHTML="";WORDS.forEach(w=>{const li=document.createElement("li");li.textContent=w.word+" — "+w.hint;ul.appendChild(li);});}
 function renderSlots(){const wrap=$("slotsWrap");wrap.innerHTML="";slotLetters.forEach(ch=>{const d=document.createElement("div");d.className="slot"+(ch?" fill":"");d.textContent=ch||"";wrap.appendChild(d);});}
-function renderBank(){$("bank").innerHTML="";}
 function updateLeaderboard(){const leader=$("leader");leader.innerHTML="";players.forEach((p,i)=>{const row=document.createElement("div");row.className="leader-row"+(i===currentPlayerIndex?" current":"");row.innerHTML=`<span>${p.name}</span><span>${p.points} pts</span>`;leader.appendChild(row);});}
+function selectCell(r,c){const cell=board[r][c];if(!cell.found){cell.found=true;players[currentPlayerIndex].points+=1;currentPlayerIndex=(currentPlayerIndex+1)%players.length;renderBoard();updateLeaderboard();}}
+
 let timeRemaining=600,gameTimer=null;
 function startTimer(){clearInterval(gameTimer);gameTimer=setInterval(()=>{$("hudTimer").textContent=fmtTime(timeRemaining);timeRemaining--;if(timeRemaining<0)clearInterval(gameTimer);},1000);}
 function stopTimer(){clearInterval(gameTimer);}
 function resetTimer(){clearInterval(gameTimer);timeRemaining=600;$("hudTimer").textContent="10:00";}
-function selectCell(r,c){const cell=board[r][c];if(!cell.found){cell.found=true;players[currentPlayerIndex].points+=1;currentPlayerIndex=(currentPlayerIndex+1)%players.length;renderBoard();updateLeaderboard();}}
+
 $("btnShuffle").onclick=newBoard;
 $("btnStart").onclick=()=>{$("qrPanel").classList.add("hidden");startTimer();};
 $("btnStop").onclick=stopTimer;
 $("btnReset").onclick=()=>{resetTimer();newBoard();$("qrPanel").classList.remove("hidden");};
 $("btnToggleQR").onclick=()=>{$("qrPanel").classList.toggle("hidden");$("btnToggleQR").textContent=$("qrPanel").classList.contains("hidden")?"Show QR":"Hide QR";};
+
 newBoard();
 </script>
 </body>
