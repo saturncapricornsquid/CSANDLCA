@@ -14,18 +14,18 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 .container{
   max-width:1200px;
   margin:0 auto;
-  padding:16px;
-  padding-bottom:220px; /* space for fixed leaderboard */
+  padding:12px;
+  padding-bottom:220px; /* space for leaderboard */
 }
-.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
 .brand{display:flex;gap:12px;align-items:center;}
-.logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red);}
-.title{font-weight:900;font-size:22px;}
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.logo{width:36px;height:36px;border-radius:50%;background:var(--voda-red);}
+.title{font-weight:900;font-size:20px;}
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .btn, #hudTimer {
   border:none;
-  padding:8px 12px;
-  border-radius:10px;
+  padding:6px 10px;
+  border-radius:8px;
   font-weight:700;
   cursor:pointer;
   background:var(--voda-red);
@@ -34,22 +34,23 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   align-items:center;
   justify-content:center;
   white-space:nowrap;
+  font-size:14px;
 }
-.card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px;}
-.card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800;}
-.card-content{padding:14px;}
-.grid{display:grid;gap:0;user-select:none;}
-.cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;
+.card{background:var(--panel);border:1px solid #24262b;border-radius:12px;margin-bottom:8px;}
+.card-header{padding:10px 12px;border-bottom:1px solid #24262b;font-weight:800;font-size:16px;}
+.card-content{padding:10px;}
+.grid{display:grid;gap:1px;user-select:none;}
+.cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;
       border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed;}
 .cell.sel{background:rgba(230,0,0,0.25);}
 .cell.found{background:var(--voda-red);color:#fff;}
-.list{list-style:none;padding:0;margin:0;display:grid;gap:6px;}
-.list li{padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013;}
+.list{list-style:none;padding:0;margin:0;display:grid;gap:4px;}
+.list li{padding:4px;border:1px solid #2a2c31;border-radius:6px;background:#0f1013;font-size:14px;}
 .list li.found{color:var(--muted);text-decoration:line-through;}
-.bank{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border:1px dashed #2a2c31;border-radius:10px;background:#0c0d10;}
-.chip{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip);}
-.slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
-.slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px;}
+.bank{display:flex;gap:6px;flex-wrap:wrap;padding:6px;border:1px dashed #2a2c31;border-radius:8px;background:#0c0d10;}
+.chip{min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip);font-size:14px;}
+.slots{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.slot{width:38px;height:38px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:16px;color:#6b7280;border-radius:6px;}
 .slot.fill{border-style:solid;color:#fff;background:#1a1c20;}
 
 /* Fixed bottom leaderboard (non-scrollable) */
@@ -62,20 +63,20 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   max-width: 1200px;
   background: var(--panel);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px;
   z-index: 999;
 }
 .leader-title {
   font-weight: 800;
-  margin-bottom: 6px;
-  font-size: 18px;
+  margin-bottom: 4px;
+  font-size:16px;
 }
 .leader-row {
   background: var(--chip);
-  padding: 6px 10px;
-  border-radius: 8px;
-  margin-top: 4px;
-  font-size: 14px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  margin-top: 3px;
+  font-size: 13px;
   display:flex;
   justify-content:space-between;
 }
@@ -91,14 +92,20 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   left: 10px;
   z-index: 999;
   background:#fff;
-  padding:8px;
+  padding:6px;
   border-radius:8px;
   text-align:center;
-  box-shadow:0 0 10px rgba(0,0,0,0.2);
+  box-shadow:0 0 8px rgba(0,0,0,0.2);
 }
 #qrPanel div { margin-top:4px; font-size:12px; color:#555; }
 
 .hidden { display: none !important; }
+
+/* Responsive layout */
+@media (max-width: 800px){
+  .card-content{display:block !important;}
+  .grid{margin-bottom:8px;}
+}
 </style>
 </head>
 <body>
@@ -131,9 +138,9 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   <!-- Puzzle Section -->
   <div class="card">
     <div class="card-header">Puzzle</div>
-    <div class="card-content" style="display:flex; gap:24px; align-items:flex-start;">
+    <div class="card-content" style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
       <div class="grid" id="grid"></div>
-      <div style="min-width:200px;">
+      <div style="min-width:180px; flex-shrink:0;">
         <div class="card">
           <div class="card-header">Final Phrase</div>
           <div class="card-content">
@@ -163,8 +170,8 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 // QR Code
 new QRCode(document.getElementById("qrcode"), {
     text: "https://saturncapricornsquid.github.io/CSANDLCA/",
-    width: 120,
-    height: 120,
+    width: 100,
+    height: 100,
     colorDark : "#E60000",
     colorLight : "#ffffff",
     correctLevel : QRCode.CorrectLevel.H
@@ -201,7 +208,7 @@ function newBoard(){
 }
 
 function renderBoard(){
-  const g=$("grid"); g.style.gridTemplateColumns=`repeat(${GRID_SIZE},36px)`; g.innerHTML="";
+  const g=$("grid"); g.style.gridTemplateColumns=`repeat(${GRID_SIZE},32px)`; g.innerHTML="";
   board.forEach((row,r)=>row.forEach((cell,c)=>{
     const d=document.createElement("div"); d.className="cell"; d.dataset.r=r; d.dataset.c=c; d.textContent=cell.letter;
     d.onclick = ()=>selectCell(r,c);
