@@ -1,361 +1,229 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vodafone Wordsearch</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #000;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    header {
-      background: red;
-      color: #fff;
-      padding: 10px;
-      text-align: center;
-      font-size: 1.5em;
-      font-weight: bold;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      padding: 10px;
-      background: #111;
-      justify-content: center;
-    }
-
-    .toolbar button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 8px;
-      background: #fff;
-      color: red;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .container {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-    }
-
-    .grid {
-      flex: 2;
-      display: grid;
-      grid-template-columns: repeat(15, 1fr);
-      grid-template-rows: repeat(15, 1fr);
-      max-width: 80vmin;
-      max-height: 80vmin;
-      margin: auto;
-      border: 2px solid #fff;
-    }
-
-    .cell {
-      border: 1px solid #444;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 1em;
-      color: #fff;
-    }
-
-    .cell.highlight {
-      background: red;
-      color: #fff;
-    }
-
-    .sidebar {
-      flex: 1;
-      background: #111;
-      padding: 10px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .section h3 {
-      margin: 5px 0;
-      font-size: 1.1em;
-      border-bottom: 1px solid #444;
-      padding-bottom: 3px;
-    }
-
-    .word-list li {
-      cursor: pointer;
-      margin: 4px 0;
-      list-style: none;
-    }
-
-    .word-list li.found {
-      text-decoration: line-through;
-      color: red;
-    }
-
-    .final-phrase {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-
-    .final-phrase span {
-      border-bottom: 2px solid #fff;
-      min-width: 20px;
-      text-align: center;
-      font-size: 1.2em;
-    }
-
-    .status-bar {
-      background: #111;
-      color: #fff;
-      padding: 5px;
-      text-align: center;
-      font-size: 0.9em;
-    }
-
-    #qrCode {
-      display: none;
-      margin: auto;
-      background: #fff;
-      padding: 5px;
-      max-width: 120px;
-    }
-
-    @media (max-width: 768px) {
-      .container {
-        flex-direction: column;
-      }
-      .grid {
-        max-width: 95vmin;
-        max-height: 95vmin;
-      }
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Vodafone Wordsearch</title>
+<style>
+  :root{
+    --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
+    --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .container{max-width:1200px;margin:0 auto;padding:16px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
+  .title{font-weight:900;font-size:22px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{border:none;padding:8px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .btn-primary{background:var(--voda-red);color:#fff}
+  .btn-ghost{background:#1a1c20;color:#fff}
+  .card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px}
+  .card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800}
+  .card-content{padding:14px}
+  .grid{display:grid;gap:0;user-select:none}
+  .cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;
+        border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed}
+  .cell.sel{background:rgba(230,0,0,0.25)}
+  .cell.found{background:var(--voda-red);color:#fff}
+  .list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+  .list li{padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013}
+  .list li.found{color:var(--muted);text-decoration:line-through}
+  .bank{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border:1px dashed #2a2c31;border-radius:10px;background:#0c0d10}
+  .chip{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip)}
+  .slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px}
+  .slot.fill{border-style:solid;color:#fff;background:#1a1c20}
+  .leader-row{display:flex;justify-content:space-between;padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013;margin-top:4px}
+</style>
 </head>
 <body>
-  <header>Vodafone Wordsearch</header>
+<!-- QR Code Panel -->
+<div id="qrPanel" style="position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:8px;border-radius:8px;text-align:center;box-shadow:0 0 10px rgba(0,0,0,0.2);">
+<div id="qrcode"></div>
+<div style="font-size:12px;color:#555;margin-top:4px;">📱 Scan Me</div>
+</div>
+<div class="container">
+<div class="topbar">
+<div class="brand">
+<div class="logo"></div>
+<div class="title">Vodafone Wordsearch</div>
+</div>
+<div class="toolbar">
+<button class="btn btn-ghost" id="btnShuffle">Shuffle</button>
+<button class="btn btn-primary" id="btnStart">Start</button>
+<button class="btn btn-ghost" id="btnStop">Stop</button>
+<button class="btn btn-ghost" id="btnReset">Reset</button>
+<button class="btn btn-ghost" id="btnNewPlayer">Add Player</button>
+<button class="btn btn-ghost" id="btnNewTeam">Add Team</button>
+<span id="hudTimer">10:00</span>
+</div>
+</div>
+<div class="card">
+<div class="card-header">Puzzle</div>
+<div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
+<div class="grid" id="grid"></div>
+<div><div class="card">
+<div class="card-header">Final Phrase</div>
+<div class="card-content">
+<div class="bank" id="bank"></div>
+<div class="slots" id="slotsWrap"></div>
+</div>
+</div><div class="card">
+<div class="card-header">Words to Find</div>
+<div class="card-content">
+<ul class="list" id="wordList"></ul>
+</div>
+</div></div></div>
+</div>
 
-  <div class="toolbar">
-    <button id="shuffleBtn">Shuffle</button>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn">Stop</button>
-    <button id="resetBtn">Reset</button>
-    <button id="addPlayerBtn">Add Player</button>
-    <button id="addTeamBtn">Add Team</button>
-    <button id="qrBtn">Show QR</button>
-    <img id="qrCode" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://vodafone.com" alt="QR Code">
-  </div>
 
-  <div class="container">
-    <div class="grid" id="grid"></div>
+<div class="card">
+<div class="card-header">Leaderboard</div>
+<div class="card-content">
+<div id="leader"></div>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// QR Code fixed to GitHub Pages
+new QRCode(document.getElementById("qrcode"), {
+    text: "https://saturncapricornsquid.github.io/CSANDLCA/",
+    width: 120,
+    height: 120,
+    colorDark : "#E60000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+});
 
-    <div class="sidebar">
-      <div class="section">
-        <h3>Leaderboard</h3>
-        <ul id="leaderboard"></ul>
-      </div>
-      <div class="section">
-        <h3>Hints & Words</h3>
-        <ul class="word-list" id="wordList"></ul>
-      </div>
-      <div class="section">
-        <h3>Final Phrase</h3>
-        <div class="final-phrase" id="finalPhrase"></div>
-      </div>
-    </div>
-  </div>
+// ============================
+// Game Config
+// ============================
+const GRID_SIZE = 15;
+const WORDS = [
+  {word:"CORE", hint:"Backbone of the network layer"},
+  {word:"SITETRACKER", hint:"Deployment operations tool"},
+  {word:"ALLOCATION", hint:"Assigning resources to tasks"},
+  {word:"NCT", hint:"System for site allocation (abbr.)"},
+  {word:"DELIVERY", hint:"Phase where circuits are provisioned"},
+  {word:"LCA", hint:"Pre-build setup team (abbr.)"},
+  {word:"CRQ", hint:"Formal change request code (abbr.)"},
+  {word:"AUDIT", hint:"Action to ensure accurate site data"},
+  {word:"TESTING", hint:"Verifying that a new configuration or service behaves as expected before deployment"},
+  {word:"ESCALATION", hint:"Raising a fault or issue to higher-level support or management"},
+  {word:"ACHIEVEMENTS", hint:"Successful delivery milestone like completing a logical configuration or resolving a critical fault"},
+  {word:"METRIC", hint:"Performance indicators used to track rollout speed, fault resolution, or service uptime"},
+];
+// Corrected final phrase (slots hidden at start)
+const TARGET_PHRASE = "CSANDLCA";
 
-  <div class="status-bar">
-    <span id="wordsLeft">Words Left: 0</span> |
-    <span id="timer">Time: 0s</span> |
-    <span id="fastest">Quickest: --</span>
-  </div>
+// ============================
+// State
+// ============================
+let board = [];
+let placedWords = [];
+let bankLetters = [];
+let slotLetters = Array.from(TARGET_PHRASE, ch => ch===' ' ? ' ' : '');
+let timeRemaining = 600; // 10:00
+let gameTimer = null;
 
-  <script>
-    const words = [
-      { word: "CORE", hint: "Backbone of the network layer that sits beyond access" },
-      { word: "SITETRACKER", hint: "The deployment operations tool used for projects, milestones and dashboards." },
-      { word: "ALLOCATION", hint: "Which activity involves assigning specific responsibilities or resources to a deployment task?" },
-      { word: "NCT", hint: "System used by all regions to allocate sites to INOC (abbr.)." },
-      { word: "DELIVERY", hint: "What term describes the phase where circuits are provisioned, and a site is handed over for live service?" },
-      { word: "LCA", hint: "Which team is responsible for setting up pre-build, before a site goes live? (abbr.)" },
-      { word: "CRQ", hint: "Formal change request code used in delivery/go live processes (abbr.)." },
-      { word: "AUDIT", hint: "Essential Connectivity Services action to ensure accurate site data before deployment" },
-      { word: "TESTING", hint: "What term describes the process of verifying that a new configuration or service behaves as expected before deployment?" },
-      { word: "ESCALATION", hint: "What term describes the act of raising a fault or issue to higher-level support or management?" },
-      { word: "ACHIEVEMENTS", hint: "What term describes a successful delivery milestone, such as completing a logical configuration or resolving a critical fault?" },
-      { word: "METRIC", hint: "What word refers to the performance indicators used to track rollout speed, fault resolution, or service uptime?" }
-    ];
+// ============================
+// Utils
+// ============================
+const $ = id => document.getElementById(id);
+function rand(n){return Math.floor(Math.random()*n);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0');const s=String(sec%60).padStart(2,'0');return `${m}:${s}`;}
 
-    const finalPhrase = "CSANDLCATEAM".split("");
-    const gridSize = 15;
-    const gridElement = document.getElementById("grid");
-    const wordListElement = document.getElementById("wordList");
-    const finalPhraseElement = document.getElementById("finalPhrase");
-    const wordsLeftElement = document.getElementById("wordsLeft");
-    const leaderboardElement = document.getElementById("leaderboard");
-    const qrCode = document.getElementById("qrCode");
-    let foundCount = 0;
-    let timerInterval;
-    let timeElapsed = 0;
-
-    // Final Phrase Slots
-    finalPhrase.forEach(() => {
-      const span = document.createElement("span");
-      span.textContent = "";
-      finalPhraseElement.appendChild(span);
-    });
-
-    // Grid Setup
-    let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
-
-    function placeWord(word) {
-      const directions = [
-        { x: 1, y: 0 }, { x: -1, y: 0 },
-        { x: 0, y: 1 }, { x: 0, y: -1 },
-        { x: 1, y: 1 }, { x: -1, y: -1 },
-        { x: 1, y: -1 }, { x: -1, y: 1 }
-      ];
-      let placed = false;
-      while (!placed) {
-        const dir = directions[Math.floor(Math.random() * directions.length)];
-        const startX = Math.floor(Math.random() * gridSize);
-        const startY = Math.floor(Math.random() * gridSize);
-        let x = startX, y = startY, fits = true;
-        for (let i = 0; i < word.length; i++) {
-          if (x < 0 || y < 0 || x >= gridSize || y >= gridSize || (grid[y][x] && grid[y][x] !== word[i])) {
-            fits = false; break;
-          }
-          x += dir.x; y += dir.y;
-        }
-        if (fits) {
-          x = startX; y = startY;
-          for (let i = 0; i < word.length; i++) {
-            grid[y][x] = word[i];
-            x += dir.x; y += dir.y;
-          }
-          placed = true;
-        }
-      }
+// ============================
+// Board
+// ============================
+function newBoard(){
+  board = Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:'',found:false})));
+  placedWords = [];
+  WORDS.forEach(w=>placeWord(w.word));
+  for(let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++) if(!board[r][c].letter) board[r][c].letter = String.fromCharCode(65+rand(26));
+  renderBoard(); renderWords();
+}
+function placeWord(word){
+  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+  shuffle(dirs);
+  for(let attempt=0;attempt<300;attempt++){
+    const [dr,dc] = dirs[attempt%dirs.length];
+    const r0 = rand(GRID_SIZE), c0 = rand(GRID_SIZE);
+    const cells=[]; let ok=true;
+    for(let i=0;i<word.length;i++){
+      const r=r0+dr*i, c=c0+dc*i;
+      if(r<0||c<0||r>=GRID_SIZE||c>=GRID_SIZE){ok=false;break;}
+      const cell=board[r][c];
+      if(cell.letter && cell.letter!==word[i]){ok=false;break;}
+      cells.push({r,c});
     }
+    if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]);placedWords.push({word,cells,found:false});return;}
+  }
+}
+function renderBoard(){
+  const g=$("grid");
+  g.style.gridTemplateColumns=`repeat(${GRID_SIZE},36px)`;
+  g.innerHTML="";
+  for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++){
+    const d=document.createElement("div");
+    d.className="cell";
+    d.dataset.r=r;d.dataset.c=c;
+    d.textContent=board[r][c].letter;
+    if(board[r][c].found) d.classList.add("found");
+    g.appendChild(d);
+  }
+}
+function renderWords(){
+  const ul=$("wordList"); ul.innerHTML="";
+  placedWords.forEach(w=>{
+    const li=document.createElement("li");
+    if(w.found) li.classList.add("found");
+    li.textContent=`${w.word} — ${WORDS.find(x=>x.word===w.word)?.hint||""}`;
+    ul.appendChild(li);
+  });
+}
 
-    words.forEach(w => placeWord(w.word));
+// ============================
+// Final Phrase
+// ============================
+function renderSlots(){
+  const wrap=$("slotsWrap"); wrap.innerHTML="";
+  Array.from(TARGET_PHRASE).forEach((ch,i)=>{
+    const slot=document.createElement("div");
+    slot.className="slot"+(slotLetters[i]?" fill":"");
+    slot.textContent=slotLetters[i]||"";
+    wrap.appendChild(slot);
+  });
+}
+function renderBank(){
+  const b=$("bank"); b.innerHTML="";
+  bankLetters.forEach(ch=>{
+    const d=document.createElement("div");d.className="chip";d.textContent=ch;b.appendChild(d);
+  });
+}
 
-    for (let y = 0; y < gridSize; y++) {
-      for (let x = 0; x < gridSize; x++) {
-        if (!grid[y][x]) grid[y][x] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      }
-    }
+// ============================
+// Timer
+// ============================
+function startTimer(){clearInterval(gameTimer);gameTimer=setInterval(()=>{timeRemaining--;$("hudTimer").textContent=fmtTime(timeRemaining);if(timeRemaining<=0)clearInterval(gameTimer);},1000);}
+function stopTimer(){clearInterval(gameTimer);}
+function resetTimer(){clearInterval(gameTimer);timeRemaining=600;$("hudTimer").textContent=fmtTime(timeRemaining);}
 
-    gridElement.innerHTML = "";
-    for (let y = 0; y < gridSize; y++) {
-      for (let x = 0; x < gridSize; x++) {
-        const cell = document.createElement("div");
-        cell.className = "cell";
-        cell.textContent = grid[y][x];
-        cell.dataset.x = x;
-        cell.dataset.y = y;
-        gridElement.appendChild(cell);
-      }
-    }
+// ============================
+// Init
+// ============================
+$("btnShuffle").onclick=newBoard;
+$("btnStart").onclick=startTimer;
+$("btnStop").onclick=stopTimer;
+$("btnReset").onclick=()=>{resetTimer();newBoard();renderSlots();renderBank();};
 
-    // Word List
-    words.forEach((item, index) => {
-      const li = document.createElement("li");
-      li.textContent = `${item.hint} – ${item.word}`;
-      li.addEventListener("click", () => {
-        if (!li.classList.contains("found")) {
-          li.classList.add("found");
-          highlightWord(item.word);
-          revealNextLetter();
-          foundCount++;
-          wordsLeftElement.textContent = `Words Left: ${words.length - foundCount}`;
-          if (foundCount === words.length) {
-            winner();
-          }
-        }
-      });
-      wordListElement.appendChild(li);
-    });
-    wordsLeftElement.textContent = `Words Left: ${words.length}`;
-
-    // Highlight Word
-    function highlightWord(word) {
-      for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
-          if (grid[y][x] === word[0]) {
-            for (let dir of [{x:1,y:0},{x:0,y:1},{x:1,y:1},{x:-1,y:1},{x:-1,y:0},{x:0,y:-1},{x:-1,y:-1},{x:1,y:-1}]) {
-              let match = true, cells = [], cx=x, cy=y;
-              for (let i=0; i<word.length; i++) {
-                if (cy<0||cx<0||cy>=gridSize||cx>=gridSize||grid[cy][cx]!==word[i]) {match=false;break;}
-                cells.push(`${cx},${cy}`);
-                cx+=dir.x; cy+=dir.y;
-              }
-              if (match) {
-                document.querySelectorAll(".cell").forEach(c=>{
-                  if (cells.includes(`${c.dataset.x},${c.dataset.y}`)) c.classList.add("highlight");
-                });
-                return;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Reveal Phrase
-    function revealNextLetter() {
-      const slots = finalPhraseElement.querySelectorAll("span");
-      for (let i = 0; i < slots.length; i++) {
-        if (slots[i].textContent === "") {
-          slots[i].textContent = finalPhrase[i];
-          break;
-        }
-      }
-    }
-
-    // Winner
-    function winner() {
-      clearInterval(timerInterval);
-      const li = document.createElement("li");
-      li.textContent = `Winner – Time: ${timeElapsed}s`;
-      leaderboardElement.appendChild(li);
-      alert("🎉 Winner! Final phrase completed.");
-    }
-
-    // Timer
-    document.getElementById("startBtn").addEventListener("click", () => {
-      clearInterval(timerInterval);
-      timeElapsed = 0;
-      timerInterval = setInterval(() => {
-        timeElapsed++;
-        document.getElementById("timer").textContent = `Time: ${timeElapsed}s`;
-      }, 1000);
-    });
-    document.getElementById("stopBtn").addEventListener("click", () => clearInterval(timerInterval));
-    document.getElementById("resetBtn").addEventListener("click", () => location.reload());
-
-    // Shuffle
-    document.getElementById("shuffleBtn").addEventListener("click", () => location.reload());
-
-    // QR Toggle
-    document.getElementById("qrBtn").addEventListener("click", () => {
-      qrCode.style.display = qrCode.style.display === "none" ? "block" : "none";
-    });
-  </script>
+function boot(){newBoard();renderSlots();renderBank();resetTimer();}
+boot();</script>
 </body>
 </html>
