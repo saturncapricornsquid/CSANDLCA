@@ -33,7 +33,7 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 .card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px;}
 .card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800;}
 .card-content{padding:14px;}
-.grid{display:grid;gap:0;user-select:none;overflow:auto; max-height:400px;}
+.grid{display:grid;gap:0;user-select:none;}
 .cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;
       border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed;}
 .cell.sel{background:rgba(230,0,0,0.25);}
@@ -76,9 +76,34 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   display:flex;
   justify-content:space-between;
 }
+.leader-row.current {
+  background: var(--voda-red);
+  color:#fff;
+}
+
+/* QR Code */
+#qrPanel {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 999;
+  background:#fff;
+  padding:8px;
+  border-radius:8px;
+  text-align:center;
+  box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
+#qrPanel div { margin-top:4px; font-size:12px; color:#555; }
 </style>
 </head>
 <body>
+
+<!-- QR Code -->
+<div id="qrPanel">
+  <div id="qrcode"></div>
+  <div>📱 Scan Me</div>
+</div>
+
 <div class="container">
   <!-- Topbar -->
   <div class="topbar">
@@ -127,128 +152,97 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
   <div id="leader"></div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-// ============================
+// QR Code
+new QRCode(document.getElementById("qrcode"), {
+    text: "https://saturncapricornsquid.github.io/CSANDLCA/",
+    width: 120,
+    height: 120,
+    colorDark : "#E60000",
+    colorLight : "#ffffff",
+    correctLevel : QRCode.CorrectLevel.H
+});
+
 // Game Config
-// ============================
 const GRID_SIZE = 15;
 const WORDS = [
-  {word:"CORE", hint:"Backbone of the network layer"},
-  {word:"SITETRACKER", hint:"Deployment operations tool"},
-  {word:"ALLOCATION", hint:"Assigning resources to tasks"},
-  {word:"NCT", hint:"System for site allocation (abbr.)"},
-  {word:"DELIVERY", hint:"Phase where circuits are provisioned"},
-  {word:"LCA", hint:"Pre-build setup team (abbr.)"},
-  {word:"CRQ", hint:"Formal change request code (abbr.)"},
-  {word:"AUDIT", hint:"Action to ensure accurate site data"},
-  {word:"TESTING", hint:"Verifying new configuration/service"},
-  {word:"ESCALATION", hint:"Raising a fault to higher-level support"},
-  {word:"ACHIEVEMENTS", hint:"Successful delivery milestone"},
-  {word:"METRIC", hint:"Performance indicators for rollout"},
+  {word:"CORE", hint:"Backbone"},
+  {word:"SITETRACKER", hint:"Tool"},
+  {word:"ALLOCATION", hint:"Assigning"}
 ];
 const TARGET_PHRASE = "CSANDLCA";
 
-// ============================
-// State
-// ============================
-let board=[], placedWords=[], bankLetters=[], slotLetters=Array.from(TARGET_PHRASE, ch => ch===' ' ? ' ' : '');
-let timeRemaining=600, gameTimer=null;
+// Players & Turn
+let players = [
+  {name:"Player 1", points:0},
+  {name:"Player 2", points:0}
+];
+let currentPlayerIndex = 0;
 
-// ============================
+// Board State
+let board = [], placedWords=[], slotLetters=Array.from(TARGET_PHRASE, ch=>ch===' '? ' ': '');
+
 // Utils
-// ============================
 const $ = id => document.getElementById(id);
 function rand(n){return Math.floor(Math.random()*n);}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
-function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return `${m}:${s}`;}
+function fmtTime(sec){return String(Math.floor(sec/60)).padStart(2,'0')+":"+String(sec%60).padStart(2,'0');}
 
-// ============================
-// Board & Words
-// ============================
+// Board
 function newBoard(){
-  board = Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:'',found:false})));
-  placedWords = [];
-  WORDS.forEach(w=>placeWord(w.word));
-  for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++)if(!board[r][c].letter)board[r][c].letter=String.fromCharCode(65+rand(26));
-  renderBoard(); renderWords();
+  board = Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:String.fromCharCode(65+rand(26)), found:false})));
+  renderBoard(); renderWords(); renderSlots(); renderBank(); updateLeaderboard();
 }
-function placeWord(word){
-  const dirs=[[0,1],[1,0],[1,1],[1,-1]]; shuffle(dirs);
-  for(let attempt=0;attempt<300;attempt++){
-    const [dr,dc]=dirs[attempt%dirs.length];
-    const r0=rand(GRID_SIZE), c0=rand(GRID_SIZE);
-    const cells=[]; let ok=true;
-    for(let i=0;i<word.length;i++){
-      const r=r0+dr*i, c=c0+dc*i;
-      if(r<0||c<0||r>=GRID_SIZE||c>=GRID_SIZE){ok=false;break;}
-      const cell=board[r][c]; if(cell.letter && cell.letter!==word[i]){ok=false;break;}
-      cells.push({r,c});
-    }
-    if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]); placedWords.push({word,cells,found:false}); return;}
-  }
-}
+
 function renderBoard(){
   const g=$("grid"); g.style.gridTemplateColumns=`repeat(${GRID_SIZE},36px)`; g.innerHTML="";
-  for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++){
-    const d=document.createElement("div"); d.className="cell"; d.dataset.r=r; d.dataset.c=c; d.textContent=board[r][c].letter;
-    if(board[r][c].found) d.classList.add("found"); g.appendChild(d);
-  }
-}
-function renderWords(){
-  const ul=$("wordList"); ul.innerHTML="";
-  placedWords.forEach(w=>{
-    const li=document.createElement("li"); if(w.found) li.classList.add("found");
-    li.textContent=`${w.word} — ${WORDS.find(x=>x.word===w.word)?.hint||""}`; ul.appendChild(li);
-  });
+  board.forEach((row,r)=>row.forEach((cell,c)=>{
+    const d=document.createElement("div"); d.className="cell"; d.dataset.r=r; d.dataset.c=c; d.textContent=cell.letter;
+    d.onclick = ()=>selectCell(r,c);
+    g.appendChild(d);
+  }));
 }
 
-// ============================
-// Final Phrase
-// ============================
-function renderSlots(){
-  const wrap=$("slotsWrap"); wrap.innerHTML="";
-  Array.from(TARGET_PHRASE).forEach((ch,i)=>{
-    const slot=document.createElement("div"); slot.className="slot"+(slotLetters[i]?" fill":""); slot.textContent=slotLetters[i]||""; wrap.appendChild(slot);
-  });
-}
-function renderBank(){
-  const b=$("bank"); b.innerHTML="";
-  bankLetters.forEach(ch=>{const d=document.createElement("div"); d.className="chip"; d.textContent=ch; b.appendChild(d);});
-}
+function renderWords(){ const ul=$("wordList"); ul.innerHTML=""; WORDS.forEach(w=>{ const li=document.createElement("li"); li.textContent=w.word+" — "+w.hint; ul.appendChild(li); }); }
+function renderSlots(){ const wrap=$("slotsWrap"); wrap.innerHTML=""; slotLetters.forEach(ch=>{ const d=document.createElement("div"); d.className="slot"+(ch?" fill":""); d.textContent=ch||""; wrap.appendChild(d); }); }
+function renderBank(){ $("bank").innerHTML=""; }
 
-// ============================
-// Timer
-// ============================
-function startTimer(){clearInterval(gameTimer);gameTimer=setInterval(()=>{timeRemaining--; $("hudTimer").textContent=fmtTime(timeRemaining); if(timeRemaining<=0)clearInterval(gameTimer);},1000);}
-function stopTimer(){clearInterval(gameTimer);}
-function resetTimer(){clearInterval(gameTimer); timeRemaining=600; $("hudTimer").textContent=fmtTime(timeRemaining);}
-
-// ============================
-// Leaderboard (example)
+// Leaderboard
 function updateLeaderboard(){
   const leader=$("leader"); leader.innerHTML="";
-  // Example static players
-  const players=[{name:"Player 1",pts:12},{name:"Player 2",pts:9}];
-  players.forEach(p=>{
-    const row=document.createElement("div"); row.className="leader-row";
-    row.innerHTML=`<span>${p.name}</span><span>${p.pts} pts</span>`;
+  players.forEach((p,i)=>{
+    const row=document.createElement("div"); row.className="leader-row"+(i===currentPlayerIndex?" current":"");
+    row.innerHTML=`<span>${p.name}</span><span>${p.points} pts</span>`;
     leader.appendChild(row);
   });
 }
 
-// ============================
-// Button events
-// ============================
+// Timer
+let timeRemaining=600, gameTimer=null;
+function startTimer(){clearInterval(gameTimer); gameTimer=setInterval(()=>{ $("hudTimer").textContent=fmtTime(timeRemaining); timeRemaining--; if(timeRemaining<0)clearInterval(gameTimer); },1000);}
+function stopTimer(){clearInterval(gameTimer);}
+function resetTimer(){clearInterval(gameTimer); timeRemaining=600; $("hudTimer").textContent="10:00";}
+
+// Word Selection
+function selectCell(r,c){
+  const cell = board[r][c];
+  if(!cell.found){
+    cell.found=true;
+    players[currentPlayerIndex].points += 1; // 1 pt per letter
+    currentPlayerIndex = (currentPlayerIndex+1) % players.length; // next turn
+    renderBoard(); updateLeaderboard();
+  }
+}
+
+// Buttons
 $("btnShuffle").onclick=newBoard;
 $("btnStart").onclick=startTimer;
 $("btnStop").onclick=stopTimer;
-$("btnReset").onclick=()=>{resetTimer(); newBoard(); renderSlots(); renderBank(); updateLeaderboard();};
+$("btnReset").onclick=()=>{resetTimer(); newBoard();};
 
-// ============================
 // Init
-// ============================
-function boot(){newBoard(); renderSlots(); renderBank(); updateLeaderboard(); resetTimer();}
-boot();
+newBoard();
 </script>
 </body>
 </html>
