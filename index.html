@@ -2,103 +2,97 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Vodafone Wordsearch</title>
 <style>
-  :root{
-    --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
-    --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-  .container{max-width:1200px;margin:0 auto;padding:16px}
-  .topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  .brand{display:flex;gap:12px;align-items:center}
-  .logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
-  .title{font-weight:900;font-size:22px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap}
-  .btn {
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    background: #fff;        
-    color: var(--voda-red);  
-    font-size: 14px;
-    transition: background 0.2s;
-  }
-  .btn:hover { background: #f5f5f5; }
-  .card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px}
-  .card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800}
-  .card-content{padding:14px}
-  .grid{display:grid;gap:0;user-select:none}
-  .cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;
-        border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed}
-  .cell.sel{background:rgba(230,0,0,0.25)}
-  .cell.found{background:var(--voda-red);color:#fff}
-  .list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
-  .list li{padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013}
-  .list li.found{color:var(--muted);text-decoration:line-through}
-  .bank{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border:1px dashed #2a2c31;border-radius:10px;background:#0c0d10}
-  .chip{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip)}
-  .slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-  .slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px}
-  .slot.fill{border-style:solid;color:#fff;background:#1a1c20}
-  .leader-row{display:flex;justify-content:space-between;padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013;margin-top:4px}
+:root{
+  --voda-red:#E60000; --bg:#0c0d10; --panel:#14161a; --muted:#9aa0a6;
+  --grid:#2b2e33; --good:#16a34a; --bad:#dc2626; --chip:#1f2226;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+.container{max-width:1200px;margin:0 auto;padding:16px}
+.topbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:40px;height:40px;border-radius:50%;background:var(--voda-red)}
+.title{font-weight:900;font-size:22px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:none;padding:8px 16px;border-radius:8px;font-weight:700;cursor:pointer;background:#fff;color:var(--voda-red);font-size:14px;transition:background 0.2s}
+.btn:hover{background:#f5f5f5}
+.card{background:var(--panel);border:1px solid #24262b;border-radius:14px;margin-bottom:12px}
+.card-header{padding:12px 14px;border-bottom:1px solid #24262b;font-weight:800}
+.card-content{padding:14px}
+.grid{display:grid;gap:0;user-select:none}
+.cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;border:1px solid #24262b;cursor:pointer;background:#101217;color:#e9eaed}
+.cell.sel{background:rgba(230,0,0,0.25)}
+.cell.found{background:var(--voda-red);color:#fff}
+.list{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.list li{padding:6px;border:1px solid #2a2c31;border-radius:8px;background:#0f1013}
+.list li.found{color:var(--muted);text-decoration:line-through}
+.bank{display:flex;gap:8px;flex-wrap:wrap;padding:8px;border:1px dashed #2a2c31;border-radius:10px;background:#0c0d10}
+.chip{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:900;border-radius:6px;background:var(--chip);cursor:grab}
+.slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px}
+.slot.fill{border-style:solid;color:#fff;background:#1a1c20}
+#gamePanel{display:none}
+#welcomePanel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center}
+#qrPanel{margin-bottom:24px}
 </style>
 </head>
 <body>
 
-<!-- QR Code Panel -->
-<div id="qrPanel" style="position:fixed;top:10px;left:10px;z-index:999;background:#fff;padding:8px;border-radius:8px;text-align:center;box-shadow:0 0 10px rgba(0,0,0,0.2); display:none;">
-  <div id="qrcode"></div>
-  <div style="font-size:12px;color:#555;margin-top:4px;">📱 Scan Me</div>
-</div>
-
 <div class="container">
-  <div class="topbar">
-    <div class="brand">
-      <div class="logo"></div>
-      <div class="title">Vodafone Wordsearch</div>
+  <!-- Welcome Screen -->
+  <div id="welcomePanel">
+    <h1 style="margin-bottom:24px;">Welcome to Vodafone Wordsearch</h1>
+    <div id="qrPanel">
+      <div id="qrcode"></div>
     </div>
-    <div class="toolbar">
-      <span id="hudTimer" class="btn">10:00</span>
-      <button class="btn" id="btnShuffle">Shuffle</button>
-      <button class="btn" id="btnStart">Start</button>
-      <button class="btn" id="btnStop">Stop</button>
-      <button class="btn" id="btnReset">Reset</button>
-      <button class="btn" id="btnNewPlayer">Add Player</button>
-      <button class="btn" id="btnNewTeam">Add Team</button>
-      <button class="btn" id="btnQR">Show QR</button>
-    </div>
+    <button class="btn" onclick="simulateScan()" style="padding:12px 24px;font-size:16px;">Scan QR to Play</button>
   </div>
 
-  <div class="card">
-    <div class="card-header">Puzzle</div>
-    <div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
-      <div class="grid" id="grid"></div>
-      <div>
-        <div class="card">
-          <div class="card-header">Final Phrase</div>
-          <div class="card-content">
-            <div class="bank" id="bank"></div>
-            <div class="slots" id="slotsWrap"></div>
+  <!-- Game Screen -->
+  <div id="gamePanel">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div class="title">Vodafone Wordsearch</div>
+      </div>
+      <div class="toolbar">
+        <span id="hudTimer" class="btn">10:00</span>
+        <button class="btn" id="btnShuffle">Shuffle</button>
+        <button class="btn" id="btnReset">Reset</button>
+        <button class="btn" id="btnNewPlayer">Add Player</button>
+        <button class="btn" id="btnNewTeam">Add Team</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Puzzle</div>
+      <div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
+        <div class="grid" id="grid"></div>
+        <div>
+          <div class="card">
+            <div class="card-header">Final Phrase</div>
+            <div class="card-content">
+              <div class="bank" id="bank"></div>
+              <div class="slots" id="slotsWrap"></div>
+            </div>
           </div>
-        </div>
-        <div class="card">
-          <div class="card-header">Words to Find</div>
-          <div class="card-content">
-            <ul class="list" id="wordList"></ul>
+          <div class="card">
+            <div class="card-header">Words to Find</div>
+            <div class="card-content">
+              <ul class="list" id="wordList"></ul>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="card">
-    <div class="card-header">Leaderboard</div>
-    <div class="card-content" id="leader"></div>
+    <div class="card">
+      <div class="card-header">Leaderboard</div>
+      <div class="card-content" id="leader"></div>
+    </div>
   </div>
 </div>
 
@@ -107,12 +101,7 @@
 const $ = id => document.getElementById(id);
 
 // QR Code
-new QRCode($("qrcode"), { text:"https://saturncapricornsquid.github.io/CSANDLCA/", width:120, height:120, colorDark:"#E60000", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.H });
-$("btnQR").onclick = () => {
-  const qr=$("qrPanel");
-  qr.style.display = (qr.style.display==='none')?'block':'none';
-  $("btnQR").textContent = (qr.style.display==='none')?'Show QR':'Hide QR';
-};
+new QRCode($("qrcode"), { text: window.location.href, width:120, height:120, colorDark:"#E60000", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.H });
 
 // Game Config
 const GRID_SIZE = 15;
@@ -133,8 +122,7 @@ const WORDS = [
 const TARGET_PHRASE = "CSANDLCA";
 
 // State
-let board=[], placedWords=[], bankLetters=[], slotLetters=Array.from(TARGET_PHRASE, ch=>ch===' '?' ':'');
-let selectedCells=[], isMouseDown=false, timeRemaining=600, gameTimer=null;
+let board=[], placedWords=[], bankLetters=[], slotLetters=Array.from(TARGET_PHRASE), selectedCells=[], isMouseDown=false, timeRemaining=600, gameTimer=null;
 let teams={}, players={};
 
 // Helpers
@@ -142,14 +130,26 @@ function rand(n){return Math.floor(Math.random()*n);}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return `${m}:${s}`;}
 
-// Board Functions
+// Show game when QR scanned
+function simulateScan(){
+  const playerName = prompt("Enter player name:");
+  if(!playerName) return;
+  players[playerName] = 0;
+  $("welcomePanel").style.display="none";
+  $("gamePanel").style.display="block";
+  newBoard(); resetTimer(); startTimer();
+}
+
+// --- Game Functions Start ---
+
 function newBoard(){
   board=Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:'',found:false})));
   placedWords=[];
   WORDS.forEach(w=>placeWord(w.word));
   for(let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++) if(!board[r][c].letter) board[r][c].letter=String.fromCharCode(65+rand(26));
-  renderBoard(); renderWords(); renderLeaderboard();
+  renderBoard(); renderWords(); renderLeaderboard(); renderConundrum();
 }
+
 function placeWord(word){
   const dirs=[[0,1],[1,0],[1,1],[1,-1]]; shuffle(dirs);
   for(let attempt=0;attempt<300;attempt++){
@@ -164,6 +164,7 @@ function placeWord(word){
     if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]); placedWords.push({word,cells,found:false}); return;}
   }
 }
+
 function renderBoard(){
   const g=$("grid"); g.style.gridTemplateColumns=`repeat(${GRID_SIZE},36px)`; g.innerHTML="";
   for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++){
@@ -171,7 +172,6 @@ function renderBoard(){
     cell.className="cell"; cell.dataset.r=r; cell.dataset.c=c;
     cell.textContent=board[r][c].letter;
     if(board[r][c].found) cell.classList.add("found");
-    // mouse events
     cell.addEventListener('mousedown', ()=>{isMouseDown=true;cell.classList.add('sel'); selectedCells.push(cell);});
     cell.addEventListener('mouseenter', ()=>{if(isMouseDown && !cell.classList.contains('sel')){cell.classList.add('sel'); selectedCells.push(cell);}});
     g.appendChild(cell);
@@ -190,56 +190,59 @@ function renderWords(){
 
 function renderLeaderboard(){
   const l=$("leader"); l.innerHTML="";
-  Object.keys(players).forEach(p=>{
-    const div=document.createElement("div"); div.className="leader-row"; div.textContent=`${p} — ${players[p]} pts`; l.appendChild(div);
+  Object.keys(players).forEach(p=>{ const div=document.createElement("div"); div.className="leader-row"; div.textContent=`${p} — ${players[p]} pts`; l.appendChild(div); });
+  Object.keys(teams).forEach(t=>{ const div=document.createElement("div"); div.className="leader-row"; div.textContent=`Team ${t} — ${teams[t]} pts`; l.appendChild(div); });
+}
+
+function renderConundrum(){
+  const bank=$("bank"); bank.innerHTML="";
+  const slots=$("slotsWrap"); slots.innerHTML="";
+  const letters = shuffle([...TARGET_PHRASE]);
+  letters.forEach(ch=>{
+    const chip=document.createElement("div"); chip.className="chip"; chip.textContent=ch; chip.draggable=true;
+    chip.ondragstart=e=>e.dataTransfer.setData("text",ch);
+    bank.appendChild(chip);
   });
-  Object.keys(teams).forEach(t=>{
-    const div=document.createElement("div"); div.className="leader-row"; div.textContent=`Team ${t} — ${teams[t]} pts`; l.appendChild(div);
+  Array.from(TARGET_PHRASE).forEach(_=>{
+    const slot=document.createElement("div"); slot.className="slot";
+    slot.ondragover=e=>e.preventDefault();
+    slot.ondrop=e=>{
+      const ch=e.dataTransfer.getData("text");
+      if(slot.textContent===''){ slot.textContent=ch; slot.classList.add("fill"); }
+    };
+    slots.appendChild(slot);
   });
 }
 
-// Word selection
 function checkWord(){
   if(selectedCells.length===0) return;
-  const selectedWord=selectedCells.map(c=>c.textContent).join('');
-  const reversed=selectedWord.split('').reverse().join('');
+  const selectedWord=selectedCells.map(c=>c.textContent).join(''); const reversed=selectedWord.split('').reverse().join('');
   let found=false;
-  placedWords.forEach((w,i)=>{
+  placedWords.forEach(w=>{
     if(!w.found && (selectedWord===w.word || reversed===w.word)){
       w.found=true; found=true;
       selectedCells.forEach(c=>c.classList.add("found"));
-      // assign points to first player if exists, else Team A
-      if(Object.keys(players).length>0){ players[Object.keys(players)[0]] +=1; } 
-      else { if(!teams.A) teams.A=0; teams.A+=1; }
-      renderLeaderboard(); renderWords();
+      if(Object.keys(players).length>0){ players[Object.keys(players)[0]] +=1; } else { if(!teams.A) teams.A=0; teams.A+=1; }
+      renderLeaderboard(); renderWords(); renderConundrum();
     }
   });
   if(!found) selectedCells.forEach(c=>c.classList.remove("sel"));
   selectedCells=[]; isMouseDown=false;
 }
 
-// Timer
-function startTimer(){clearInterval(gameTimer); gameTimer=setInterval(()=>{timeRemaining--; $("hudTimer").textContent=fmtTime(timeRemaining); if(timeRemaining<=0) clearInterval(gameTimer);},1000);}
-function stopTimer(){clearInterval(gameTimer);}
+function startTimer(){clearInterval(gameTimer); gameTimer=setInterval(()=>{timeRemaining--; $("hudTimer").textContent=fmtTime(timeRemaining); if(timeRemaining<=0){clearInterval(gameTimer); highlightUnfound();}},1000);}
 function resetTimer(){clearInterval(gameTimer); timeRemaining=600; $("hudTimer").textContent=fmtTime(timeRemaining);}
+function highlightUnfound(){placedWords.forEach(w=>{w.found?colorWord(w,'green'):colorWord(w,'red');});}
 
-// Add Player / Team
-$("btnNewPlayer").onclick = ()=>{
-  const name=prompt("Enter player name:"); if(name) players[name]=0; renderLeaderboard();
-};
-$("btnNewTeam").onclick = ()=>{
-  const name=prompt("Enter team name:"); if(name) teams[name]=0; renderLeaderboard();
-};
+function colorWord(w,color){w.cells.forEach(c=>{document.querySelector(`.cell[data-r='${c.r}'][data-c='${c.c}']`).style.background=color==='green'? 'green':'red';}); const ulItems=$("wordList").children; for(let li of ulItems){ if(li.textContent.startsWith(w.word)){ li.style.color=color==='green'?'#16a34a':'#dc2626'; }}}
 
-// Other buttons
+// Player / Team
+$("btnNewPlayer").onclick = ()=>{ const name=prompt("Enter player name:"); if(name) players[name]=0; renderLeaderboard();};
+$("btnNewTeam").onclick = ()=>{ const name=prompt("Enter team name:"); if(name) teams[name]=0; renderLeaderboard();};
+
+// Buttons
 $("btnShuffle").onclick=newBoard;
-$("btnStart").onclick=startTimer;
-$("btnStop").onclick=stopTimer;
 $("btnReset").onclick=()=>{resetTimer(); newBoard();};
-
-// Boot
-newBoard();
-resetTimer();
 </script>
 </body>
 </html>
