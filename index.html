@@ -34,26 +34,21 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 .slots{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .slot{width:44px;height:44px;border:2px dashed #2a2c31;display:flex;align-items:center;justify-content:center;font-size:20px;color:#6b7280;border-radius:8px}
 .slot.fill{border-style:solid;color:#fff;background:#1a1c20}
-#welcomePanel{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;text-align:center}
-#welcomePanel h1{margin-bottom:24px;font-size:24px}
-#qrPanel{margin-bottom:24px}
 #gamePanel{display:none}
-@media(max-width:768px){
-  .grid{grid-template-columns:repeat(10, 30px)}
-  .cell{width:30px;height:30px;font-size:14px}
-  .slot{width:36px;height:36px;font-size:16px}
-  .toolbar{flex-wrap:wrap;gap:4px}
-  .topbar .title{font-size:18px}
-}
+#welcomePanel{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;text-align:center}
+#qrPanel{margin-top:16px;text-align:center}
 </style>
 </head>
 <body>
 <div class="container">
+
   <!-- Welcome Screen -->
   <div id="welcomePanel">
     <h1>Welcome to Vodafone Wordsearch</h1>
-    <div id="qrPanel"></div>
-    <button class="btn" id="btnScanQR">Scan QR to Play</button>
+    <button class="btn" id="btnStartGame" style="margin:16px 0;">Scan QR to Play</button>
+    <div id="qrPanel">
+      <div id="qrcode"></div>
+    </div>
   </div>
 
   <!-- Game Screen -->
@@ -74,7 +69,7 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 
     <div class="card">
       <div class="card-header">Puzzle</div>
-      <div class="card-content" style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap">
+      <div class="card-content" style="display: flex; gap: 24px; align-items: flex-start;">
         <div class="grid" id="grid"></div>
         <div>
           <div class="card">
@@ -106,7 +101,9 @@ body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,Segoe 
 const $ = id => document.getElementById(id);
 
 // QR Code
-new QRCode($("qrPanel"), { text: window.location.href, width:150, height:150, colorDark:"#E60000", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.H });
+const qrURL = new URL(window.location.href);
+qrURL.searchParams.set("player","PLAYER1"); 
+new QRCode($("qrcode"), { text: qrURL.toString(), width:120, height:120, colorDark:"#E60000", colorLight:"#ffffff", correctLevel:QRCode.CorrectLevel.H });
 
 // Game Config
 const GRID_SIZE = 15;
@@ -135,14 +132,13 @@ function rand(n){return Math.floor(Math.random()*n);}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;}
 function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); return `${m}:${s}`;}
 
-// --- Board / Game Functions ---
+// Board Functions
 function newBoard(){
   board=Array.from({length:GRID_SIZE}, ()=>Array.from({length:GRID_SIZE}, ()=>({letter:'',found:false})));
   placedWords=[]; WORDS.forEach(w=>placeWord(w.word));
   for(let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++) if(!board[r][c].letter) board[r][c].letter=String.fromCharCode(65+rand(26));
   renderBoard(); renderWords(); renderLeaderboard(); renderConundrum();
 }
-
 function placeWord(word){
   const dirs=[[0,1],[1,0],[1,1],[1,-1]]; shuffle(dirs);
   for(let attempt=0;attempt<300;attempt++){
@@ -157,7 +153,6 @@ function placeWord(word){
     if(ok){cells.forEach((p,i)=>board[p.r][p.c].letter=word[i]); placedWords.push({word,cells,found:false}); return;}
   }
 }
-
 function renderBoard(){
   const g=$("grid"); g.style.gridTemplateColumns=`repeat(${GRID_SIZE},36px)`; g.innerHTML="";
   for(let r=0;r<GRID_SIZE;r++)for(let c=0;c<GRID_SIZE;c++){
@@ -172,25 +167,27 @@ function renderBoard(){
   document.body.addEventListener('mouseup',checkWord);
 }
 
+// Render Words, Leaderboard, Conundrum
 function renderWords(){
   const ul=$("wordList"); ul.innerHTML="";
   placedWords.forEach(w=>{
-    const li=document.createElement("li"); li.textContent=`${w.word} — ${WORDS.find(x=>x.word===w.word)?.hint||""}`;
+    const li=document.createElement("li"); 
+    li.textContent=`${w.word} — ${WORDS.find(x=>x.word===w.word)?.hint||""}`;
     if(w.found) li.classList.add("found");
     ul.appendChild(li);
   });
 }
-
 function renderLeaderboard(){
   const l=$("leader"); l.innerHTML="";
   Object.keys(players).forEach(p=>{ const div=document.createElement("div"); div.className="leader-row"; div.textContent=`${p} — ${players[p]} pts`; l.appendChild(div); });
   Object.keys(teams).forEach(t=>{ const div=document.createElement("div"); div.className="leader-row"; div.textContent=`Team ${t} — ${teams[t]} pts`; l.appendChild(div); });
 }
-
 function renderConundrum(){
   const bank=$("bank"); bank.innerHTML="";
   const slots=$("slotsWrap"); slots.innerHTML="";
-  const letters = shuffle([...TARGET_PHRASE]);
+  let letters=[];
+  placedWords.forEach(w=>{ if(w.found) letters.push(...w.word.split('')); });
+  letters = shuffle(letters);
   letters.forEach(ch=>{
     const chip=document.createElement("div"); chip.className="chip"; chip.textContent=ch; chip.draggable=true;
     chip.ondragstart=e=>e.dataTransfer.setData("text",ch);
@@ -207,12 +204,12 @@ function renderConundrum(){
   });
 }
 
+// Word Selection
 function checkWord(){
   if(selectedCells.length===0) return;
-  const selectedWord=selectedCells.map(c=>c.textContent).join('');
-  const reversed=selectedWord.split('').reverse().join('');
+  const selectedWord=selectedCells.map(c=>c.textContent).join(''); const reversed=selectedWord.split('').reverse().join('');
   let found=false;
-  placedWords.forEach((w,i)=>{
+  placedWords.forEach(w=>{
     if(!w.found && (selectedWord===w.word || reversed===w.word)){
       w.found=true; found=true;
       selectedCells.forEach(c=>c.classList.add("found"));
@@ -224,6 +221,7 @@ function checkWord(){
   selectedCells=[]; isMouseDown=false;
 }
 
+// Timer
 function startTimer(){clearInterval(gameTimer); gameTimer=setInterval(()=>{timeRemaining--; $("hudTimer").textContent=fmtTime(timeRemaining); if(timeRemaining<=0){clearInterval(gameTimer); highlightUnfound();}},1000);}
 function resetTimer(){clearInterval(gameTimer); timeRemaining=600; $("hudTimer").textContent=fmtTime(timeRemaining);}
 function highlightUnfound(){placedWords.forEach(w=>{w.found?colorWord(w,'green'):colorWord(w,'red');});}
@@ -237,23 +235,14 @@ $("btnNewTeam").onclick = ()=>{ const name=prompt("Enter team name:"); if(name) 
 $("btnShuffle").onclick=newBoard;
 $("btnReset").onclick=()=>{resetTimer(); newBoard();};
 
-// Scan QR button
-$("btnScanQR").onclick = () => {
-  players["Player1"]=0;
-  $("welcomePanel").style.display="none";
-  $("gamePanel").style.display="block";
-  newBoard(); resetTimer(); startTimer();
-};
-
-// Auto-login from QR
-const urlParams = new URLSearchParams(window.location.search);
-const player = urlParams.get("player");
-if(player){
+// Start game from welcome button
+$("btnStartGame").onclick = ()=>{
+  const player = "PLAYER1";
   players[player]=0;
   $("welcomePanel").style.display="none";
   $("gamePanel").style.display="block";
   newBoard(); resetTimer(); startTimer();
-}
+};
 </script>
 </body>
 </html>
