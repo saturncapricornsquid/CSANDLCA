@@ -1,17 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<title>Team Wordsearch</title>
-
-<style>
-:root{
-  --bg:#0c0d10;
-  --panel:#14161a;
-  --border:#24262b;
-  --red:#E60000;
+<head00;<head>
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -68,9 +57,35 @@ body{
   padding:12px;
   margin-bottom:12px;
 }
+.card h3{
+  margin:0 0 8px 0;
+}
+input{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:#101217;
+  color:#fff;
+  margin-bottom:8px;
+}
+button{
+  background:var(--red);
+  border:none;
+  padding:10px 14px;
+  border-radius:20px;
+  font-weight:700;
+  color:#fff;
+}
+.player{
+  font-size:14px;
+  color:#cfd5d9;
+  margin:4px 0;
+}
 .grid{
   display:grid;
   grid-template-columns:repeat(15,36px);
+  margin-top:12px;
 }
 .cell{
   width:36px;
@@ -83,6 +98,7 @@ body{
   font-weight:800;
   user-select:none;
 }
+.cell.sel{background:#333}
 </style>
 </head>
 
@@ -99,17 +115,25 @@ body{
 
 <!-- GAME -->
 <div id="game">
-  <div class="card">
-    <strong>Teams</strong>
-    <p>Create your team and add players</p>
-    <!-- placeholder for team/player UI -->
+
+  <!-- TEAM SETUP -->
+  <div class="card" id="teamSetup">
+    <h3>Team Setup</h3>
+    <input id="teamName" placeholder="Team name" />
+    <input id="playerName" placeholder="Player name" />
+    <button id="addPlayerBtn">Add Player</button>
+
+    <div id="players"></div>
+
+    <button id="lockTeamBtn" style="margin-top:10px;">Lock Team</button>
   </div>
 
+  <!-- WORDSEARCH -->
   <div class="card">
     <strong>Wordsearch</strong>
   </div>
-
   <div class="grid" id="grid"></div>
+
 </div>
 
 <script>
@@ -117,14 +141,45 @@ body{
 document.getElementById('enterBtn').onclick=()=>{
   document.getElementById('welcome').style.display='none';
   document.getElementById('game').style.display='block';
+};
+
+/* TEAM SETUP */
+const players=[];
+document.getElementById('addPlayerBtn').onclick=()=>{
+  const name=document.getElementById('playerName').value.trim();
+  if(!name) return;
+  players.push(name);
+  document.getElementById('playerName').value='';
+  renderPlayers();
+};
+
+function renderPlayers(){
+  const wrap=document.getElementById('players');
+  wrap.innerHTML='';
+  players.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='player';
+    d.textContent='• '+p;
+    wrap.appendChild(d);
+  });
+}
+
+document.getElementById('lockTeamBtn').onclick=()=>{
+  const team=document.getElementById('teamName').value.trim();
+  if(!team || players.length===0){
+    alert('Please enter a team name and at least one player');
+    return;
+  }
+  document.getElementById('teamSetup').style.display='none';
   init();
   render();
 };
 
-/* BASIC WORDSEARCH */
+/* WORDSEARCH */
 const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
 const SIZE=15;
 let board=[];
+let selecting=false, selCells=[];
 
 function init(){
   board=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>''));  
@@ -156,11 +211,50 @@ function render(){
     const d=document.createElement('div');
     d.className='cell';
     d.textContent=board[r][c];
+    d.dataset.r=r; d.dataset.c=c;
+    d.onpointerdown=()=>startSelect(r,c);
+    d.onpointerenter=()=>dragSelect(r,c);
+    d.onpointerup=endSelect;
     g.appendChild(d);
   }
+}
+
+function startSelect(r,c){
+  selecting=true;
+  selCells=[[r,c]];
+  highlight();
+}
+function dragSelect(r,c){
+  if(!selecting) return;
+  const last=selCells[selCells.length-1];
+  if(last[0]!==r||last[1]!==c) selCells.push([r,c]);
+  highlight();
+}
+function endSelect(){
+  selecting=false;
+  clearSel();
+}
+function highlight(){
+  clearSel();
+  selCells.forEach(p=>{
+    const el=document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`);
+    if(el) el.classList.add('sel');
+  });
+}
+function clearSel(){
+  document.querySelectorAll('.cell').forEach(c=>c.classList.remove('sel'));
 }
 </script>
 
 </body>
 </html>
-``
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>Team Wordsearch</title>
+
+<style>
+:root{
+  --bg:#0c0d10;
+  --panel:#14161a;
+  --border:#24262b;
