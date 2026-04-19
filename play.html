@@ -45,27 +45,64 @@ body {
 /* GAME */
 #game {
   display: none;
-  padding: 20px;
-  text-align: center;
+  padding: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+button, select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 700;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(8, 40px);
-  gap: 6px;
-  justify-content: center;
-  margin-top: 20px;
+  grid-template-columns: repeat(10, 36px);
+  gap: 4px;
+  margin-top: 12px;
 }
 
 .cell {
-  width: 40px;
-  height: 40px;
-  background: #101217;
-  border: 1px solid #24262b;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #101217;
+  border: 1px solid #24262b;
   font-weight: 800;
+  user-select: none;
+}
+
+.cell.selected {
+  background: #333;
+}
+
+.cell.found {
+  background: #E60000;
+}
+
+.panel {
+  margin-top: 12px;
+  display: flex;
+  gap: 20px;
+}
+
+.panel div {
+  flex: 1;
+}
+
+.leaderboard div {
+  margin: 4px 0;
 }
 </style>
 </head>
@@ -74,21 +111,114 @@ body {
 
 <!-- LANDING -->
 <div id="landing">
-  <div>
+  <div style="text-align:center">
     <h1>Team Wordsearch</h1>
-    ✅ This button WILL work
-    <br><br>
     <button onclick="enterGame()">Enter Game</button>
   </div>
 </div>
 
 <!-- GAME -->
 <div id="game">
-  <h2>Game Loaded ✅</h2>
+
+  <div class="topbar">
+    <div>
+      <button onclick="addTeam()">Add Team</button>
+      <select id="activeTeam"></select>
+    </div>
+    <strong id="activeScore">Score: 0</strong>
+  </div>
+
   <div class="grid" id="grid"></div>
+
+  <div class="panel">
+    <div>
+      <h3>Words</h3>
+      <div id="wordList"></div>
+    </div>
+    <div>
+      <h3>Leaderboard</h3>
+      <div class="leaderboard" id="leaderboard"></div>
+    </div>
+  </div>
+
 </div>
 
 <script>
-/* ✅ INLINE FUNCTION — cannot fail */
+/* ===== GAME DATA ===== */
+const WORDS = ["CORE","LCA","CRQ","AUDIT"];
+const SIZE = 10;
+const board = [];
+const placed = [];
+let selecting = false;
+let selectedCells = [];
+
+const teams = [];
+let activeTeamIndex = 0;
+
+/* ===== ENTER GAME ===== */
 function enterGame() {
   document.getElementById("landing").style.display = "none";
+  document.getElementById("game").style.display = "block";
+  init();
+  renderGrid();
+  renderWords();
+}
+
+/* ===== TEAM LOGIC ===== */
+function addTeam() {
+  const name = prompt("Team name?");
+  if (!name) return;
+  teams.push({ name, score: 0 });
+  updateTeamSelect();
+}
+
+function updateTeamSelect() {
+  const sel = document.getElementById("activeTeam");
+  sel.innerHTML = "";
+  teams.forEach((t, i) => {
+    const o = document.createElement("option");
+    o.value = i;
+    o.textContent = t.name;
+    sel.appendChild(o);
+  });
+  sel.onchange = e => {
+    activeTeamIndex = +e.target.value;
+    updateScore();
+  };
+  updateScore();
+  renderLeaderboard();
+}
+
+function updateScore() {
+  if (!teams.length) {
+    document.getElementById("activeScore").textContent = "Score: 0";
+  } else {
+    document.getElementById("activeScore").textContent =
+      `Score: ${teams[activeTeamIndex].score}`;
+  }
+}
+
+/* ===== INIT BOARD ===== */
+function init() {
+  for (let r = 0; r < SIZE; r++) {
+    board[r] = [];
+    for (let c = 0; c < SIZE; c++) {
+      board[r][c] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    }
+  }
+
+  WORDS.forEach(word => {
+    const r = Math.floor(Math.random() * SIZE);
+    for (let i = 0; i < word.length; i++) {
+      if (i < SIZE) board[r][i] = word[i];
+    }
+    placed.push({ word, found: false });
+  });
+}
+
+/* ===== RENDER ===== */
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  for (let r = 0; r < SIZE; r++) {
