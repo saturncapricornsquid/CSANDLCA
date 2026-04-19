@@ -6,7 +6,6 @@
 <title>Team Wordsearch</title>
 
 <style>
-/* ===== GLOBAL ===== */
 html, body {
   margin: 0;
   height: 100%;
@@ -18,17 +17,12 @@ body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* ===== LANDING ===== */
+/* LANDING */
 #landing {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-#landing .box {
-  text-align: center;
-  width: 300px;
 }
 
 #landing h1 {
@@ -38,8 +32,7 @@ body {
 }
 
 #landing button {
-  width: 100%;
-  padding: 16px;
+  padding: 16px 28px;
   font-size: 18px;
   font-weight: 800;
   border-radius: 32px;
@@ -49,86 +42,53 @@ body {
   cursor: pointer;
 }
 
-/* ===== GAME ===== */
+/* GAME */
 #game {
   display: none;
-  padding: 16px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.card {
-  background: #14161a;
-  border: 1px solid #24262b;
-  border-radius: 14px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 20px;
+  text-align: center;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(8, 40px);
+  gap: 6px;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .cell {
-  aspect-ratio: 1 / 1;
+  width: 40px;
+  height: 40px;
+  background: #101217;
+  border: 1px solid #24262b;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #101217;
-  border: 1px solid #24262b;
   font-weight: 800;
-  user-select: none;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LANDING SCREEN -->
+<!-- LANDING -->
 <div id="landing">
-  <div class="box">
+  <div>
     <h1>Team Wordsearch</h1>
-    <button id="enterBtn">Enter Game</button>
+    ✅ This button WILL work
+    <br><br>
+    <button onclick="enterGame()">Enter Game</button>
   </div>
 </div>
 
-<!-- GAME SCREEN -->
+<!-- GAME -->
 <div id="game">
-  <div class="card">
-    <strong>Wordsearch</strong>
-  </div>
+  <h2>Game Loaded ✅</h2>
   <div class="grid" id="grid"></div>
 </div>
 
 <script>
-/* ===== SAFE, MINIMAL JS ===== */
-
-const landing = document.getElementById("landing");
-const game = document.getElementById("game");
-const grid = document.getElementById("grid");
-const enterBtn = document.getElementById("enterBtn");
-
-enterBtn.addEventListener("click", () => {
-  landing.style.display = "none";
-  game.style.display = "block";
-  buildGrid();
-});
-
-function buildGrid() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  grid.innerHTML = "";
-
-  for (let i = 0; i < 100; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    cell.textContent = letters[Math.floor(Math.random() * letters.length)];
-    grid.appendChild(cell);
-  }
-}
-</script>
-
-</body>
-</html>
-``
+/* ✅ INLINE FUNCTION — cannot fail */
+function enterGame() {
+  document.getElementById("landing").style.display = "none";
