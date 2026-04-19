@@ -1,54 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Team Wordsearch</title>
 
 <style>
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:radial-gradient(circle at top, #1a1a1a, #0c0d10);
-  color:#fff;
-  font-family:system-ui,Segoe UI,Roboto,Arial;
+html, body {
+  margin: 0;
+  height: 100%;
 }
-.wrap{
-  text-align:center;
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1a1a1a, #0c0d10);
+  color: #ffffff;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
-h1{
-  font-size:56px;
-  margin-bottom:12px;
-  color:#E60000; /* Vodafone red */
+.container {
+  text-align: center;
+  max-width: 360px;
 }
-p{
-  color:#cfd5d9;
-  font-size:18px;
-  margin-bottom:28px;
+h1 {
+  font-size: 42px;
+  margin-bottom: 30px;
+  color: #E60000;
 }
-img{
-  width:300px;
-  height:300px;
-  background:#fff;
-  border-radius:20px;
-  box-shadow:0 16px 40px rgba(0,0,0,.55);
+button {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 800;
+  border-radius: 32px;
+  border: none;
+  background: #E60000;
+  color: #ffffff;
 }
 </style>
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="container">
     <h1>Team Wordsearch</h1>
-    <p>Scan the QR code to join the game</p>
-
-    <!-- ✅ THIS IS THE FIX -->
-    <img
-      src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://saturncapricornsquid.github.io/CSANDLCA/play.html"
-      alt="QR code to join the Team Wordsearch"
-    />
+    <button onclick="location.href='game.html'">Enter Game</button>
   </div>
 </body>
 </html>
