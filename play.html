@@ -1,5 +1,369 @@
 <!DOCTYPE html>
-<html lang="en">
+0;height:100%}<html lang="en">
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+
+/* LANDING */
+#landing{
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at top,#1a1a1a,#0c0d10);
+  z-index:10;
+}
+#landing h1{font-size:42px;color:var(--red);margin-bottom:28px}
+#landing button{
+  width:100%; padding:16px; font-size:18px; font-weight:800;
+  border-radius:32px; border:none; background:var(--red); color:#fff;
+}
+
+/* WINNER */
+#winner{
+  position:fixed; inset:0; display:none;
+  align-items:center; justify-content:center;
+  background:radial-gradient(circle at top,#1a1a1a,#0c0d10);
+  z-index:20; text-align:center;
+}
+#winner h1{color:var(--red)}
+
+/* APP */
+#app{display:none;height:100%}
+
+/* TOP BAR */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#15171a,#0f1013);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}
+.brand .dot{width:14px;height:14px;border-radius:50%;background:var(--red)}
+.toolbar{display:flex;gap:8px;align-items:center}
+.toolbar button,.toolbar select{
+  background:#fff;color:#000;border:none;
+  padding:6px 10px;border-radius:8px;
+  font-weight:700;font-size:12px;
+}
+
+/* LAYOUT */
+.main{
+  display:grid; grid-template-columns:1fr 420px;
+  gap:16px; padding:16px;
+}
+@media(max-width:1100px){.main{grid-template-columns:1fr}}
+
+/* GRID */
+.grid{display:grid;grid-template-columns:repeat(15,36px)}
+.cell{
+  width:36px;height:36px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--border);background:#101217;
+  font-weight:800; user-select:none;
+}
+.cell.sel{background:#333}
+.cell.found{background:var(--red);color:#fff}
+
+/* CARDS */
+.card{
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:14px; padding:12px; margin-bottom:12px;
+}
+.word{padding:6px 8px;border-bottom:1px solid #1f2226;font-size:14px}
+.word.found{color:#777;text-decoration:line-through}
+
+/* FINAL PHRASE */
+.phrase{display:flex;gap:6px;flex-wrap:wrap}
+.slot{
+  width:36px;height:36px;border:2px dashed #2a2c31;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:8px;font-weight:800;
+}
+.slot.fill{border-style:solid;background:#1a1c20}
+</style>
+</head>
+
+<body>
+
+<!-- LANDING -->
+<div id="landing">
+  <div style="width:280px;text-align:center">
+    <h1>Team Wordsearch</h1>
+    <button onclick="startGame()">Enter Game</button>
+  </div>
+</div>
+
+<!-- WINNER -->
+<div id="winner">
+  <div>
+    <h1>🏆 Winner</h1>
+    <p id="winnerText"></p>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="dot"></div>
+      Vodafone Wordsearch
+    </div>
+    <div class="toolbar">
+      <span id="timer">10:00</span>
+      <button onclick="startTimer()">Start</button>
+      <button onclick="stopTimer()">Stop</button>
+      <button onclick="shuffle()">Shuffle</button>
+      <button onclick="resetGame()">Reset</button>
+      <button onclick="addTeam()">Add Team</button>
+      <button onclick="addPlayer()">Add Player</button>
+      <select id="activeTeam"></select>
+    </div>
+  </div>
+
+  <div class="main">
+    <div>
+      <div class="card">
+        <strong id="wordsLeft"></strong><br>
+        <strong id="scoreBoard"></strong>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h3>Final Phrase</h3>
+        <div class="phrase" id="phrase"></div>
+      </div>
+      <div class="card">
+        <h3>Words to Find</h3>
+        <div id="wordList"></div>
+      </div>
+      <div class="card">
+        <h3>Leaderboard</h3>
+        <div id="leaderboard"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* DATA */
+const WORDS=[
+ {w:"CORE",d:"Backbone of the network layer"},
+ {w:"SITETRACKER",d:"Deployment operations tool"},
+ {w:"ALLOCATION",d:"Assigning resources to tasks"},
+ {w:"NCT",d:"System for site allocation (abbr.)"},
+ {w:"DELIVERY",d:"Phase where circuits are provisioned"},
+ {w:"LCA",d:"Pre-build setup team (abbr.)"},
+ {w:"CRQ",d:"Formal change request code (abbr.)"},
+ {w:"AUDIT",d:"Action to ensure accurate site data"},
+ {w:"TESTING",d:"Verifying configuration before deployment"},
+ {w:"ESCALATION",d:"Raising a fault to higher-level support"},
+ {w:"ACHIEVEMENTS",d:"Successful delivery milestone"},
+ {w:"METRIC",d:"Performance indicators to track rollout"}
+];
+const SIZE=15;
+
+/* STATE */
+let board=[], placed=[];
+let selecting=false, selCells=[];
+let revealIndex=0;
+let time=600, timerInt=null;
+const teams=[]; let activeTeamIndex=0;
+
+/* LANDING */
+function startGame(){
+  landing.style.display='none';
+  app.style.display='block';
+  init(); render(); updateTeamsUI();
+}
+
+/* TEAMS */
+function addTeam(){
+  const name=prompt("Team name?");
+  if(!name) return;
+  teams.push({name,score:0,players:[]});
+  updateTeamsUI();
+}
+function addPlayer(){
+  if(!teams.length){alert("Add a team first");return;}
+  const name=prompt("Player name?");
+  if(!name) return;
+  teams[activeTeamIndex].players.push(name);
+}
+function updateTeamsUI(){
+  activeTeam.innerHTML='';
+  teams.forEach((t,i)=>{
+    const o=document.createElement('option');
+    o.value=i; o.textContent=t.name;
+    activeTeam.appendChild(o);
+  });
+  activeTeam.onchange=e=>activeTeamIndex=+e.target.value;
+  renderLeaderboard(); updateHUD();
+}
+
+/* INIT */
+function init(){
+  board=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>''));  
+  placed=[]; revealIndex=0;
+  WORDS.forEach(o=>placeWord(o.w));
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
+    if(!board[r][c])board[r][c]=String.fromCharCode(65+Math.random()*26);
+  renderWords(); renderPhrase(); updateHUD();
+}
+
+/* WORD PLACEMENT */
+function placeWord(word){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let t=0;t<400;t++){
+    const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
+    const r0=Math.floor(Math.random()*SIZE);
+    const c0=Math.floor(Math.random()*SIZE);
+    let cells=[],ok=true;
+    for(let i=0;i<word.length;i++){
+      const r=r0+dr*i,c=c0+dc*i;
+      if(r<0||c<0||r>=SIZE||c>=SIZE){ok=false;break;}
+      cells.push([r,c]);
+    }
+    if(ok){
+      cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);
+      placed.push({word,cells,found:false});
+      return;
+    }
+  }
+}
+
+/* RENDER */
+function render(){
+  grid.innerHTML='';
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const d=document.createElement('div');
+    d.className='cell'; d.textContent=board[r][c];
+    d.dataset.r=r; d.dataset.c=c;
+    d.onpointerdown=()=>startSel(r,c);
+    d.onpointerenter=()=>dragSel(r,c);
+    d.onpointerup=endSel;
+    grid.appendChild(d);
+  }
+}
+function renderWords(){
+  wordList.innerHTML='';
+  WORDS.forEach(o=>{
+    const div=document.createElement('div');
+    div.className='word'; div.id='word-'+o.w;
+    div.textContent=`${o.w} — ${o.d}`;
+    wordList.appendChild(div);
+  });
+}
+function renderPhrase(){
+  phrase.innerHTML='';
+  for(let i=0;i<WORDS.length;i++){
+    const s=document.createElement('div');
+    s.className='slot'; phrase.appendChild(s);
+  }
+}
+function updateHUD(){
+  wordsLeft.textContent=`Words left: ${placed.filter(w=>!w.found).length}`;
+  scoreBoard.textContent=teams.length
+    ? `Active Team: ${teams[activeTeamIndex].name} — Score: ${teams[activeTeamIndex].score}`
+    : `No teams yet`;
+}
+
+/* SELECTION */
+function startSel(r,c){selecting=true;selCells=[[r,c]];highlight();}
+function dragSel(r,c){
+  if(!selecting)return;
+  const last=selCells[selCells.length-1];
+  if(last[0]!==r||last[1]!==c)selCells.push([r,c]);
+  highlight();
+}
+function endSel(){
+  selecting=false;
+  const str=selCells.map(p=>board[p[0]][p[1]]).join('');
+  const rev=str.split('').reverse().join('');
+  placed.forEach(w=>{
+    if(!w.found&&(str===w.word||rev===w.word)){
+      w.found=true;
+      teams[activeTeamIndex].score+=w.word.length;
+      w.cells.forEach(p=>{
+        document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`)
+          .classList.add('found');
+      });
+      document.getElementById('word-'+w.word).classList.add('found');
+      phrase.children[revealIndex].textContent=w.word[0];
+      phrase.children[revealIndex].classList.add('fill');
+      revealIndex++;
+      updateTeamsUI(); checkWin();
+    }
+  });
+  clearSel();
+}
+function highlight(){
+  clearSel();
+  selCells.forEach(p=>{
+    document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`)
+      .classList.add('sel');
+  });
+}
+function clearSel(){
+  document.querySelectorAll('.cell').forEach(c=>c.classList.remove('sel'));
+}
+
+/* LEADERBOARD */
+function renderLeaderboard(){
+  leaderboard.innerHTML='';
+  [...teams].sort((a,b)=>b.score-a.score).forEach(t=>{
+    const d=document.createElement('div');
+    d.textContent=`${t.name}: ${t.score}`;
+    leaderboard.appendChild(d);
+  });
+}
+
+/* TIMER */
+function startTimer(){
+  if(timerInt)return;
+  timerInt=setInterval(()=>{
+    if(time<=0){stopTimer();return;}
+    time--;
+    timer.textContent=`${Math.floor(time/60)}:${String(time%60).padStart(2,'0')}`;
+  },1000);
+}
+function stopTimer(){clearInterval(timerInt);timerInt=null}
+
+/* CONTROLS */
+function shuffle(){stopTimer();init();render()}
+function resetGame(){stopTimer();time=600;timer.textContent='10:00';init();render()}
+
+/* WIN */
+function checkWin(){
+  if(placed.every(w=>w.found)){
+    stopTimer();
+    app.style.display='none';
+    winner.style.display='flex';
+    const top=[...teams].sort((a,b)=>b.score-a.score)[0];
+    winnerText.textContent=`${top.name} wins with ${top.score} points!`;
+  }
+}
+
+/* DOM */
+const landing=document.getElementById('landing');
+const app=document.getElementById('app');
+const grid=document.getElementById('grid');
+const wordList=document.getElementById('wordList');
+const phrase=document.getElementById('phrase');
+const wordsLeft=document.getElementById('wordsLeft');
+const scoreBoard=document.getElementById('scoreBoard');
+const timer=document.getElementById('timer');
+const winner=document.getElementById('winner');
+const winnerText=document.getElementById('winnerText');
+const leaderboard=document.getElementById('leaderboard');
+const activeTeam=document.getElementById('activeTeam');
+</script>
+
+</body>
+</html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,125 +371,11 @@
 <title>Team Wordsearch</title>
 
 <style>
-html, body {
-  margin: 0;
-  height: 100%;
+:root{
+  --bg:#0c0d10;
+  --panel:#14161a;
+  --border:#24262b;
+  --red:#E60000;
+  --text:#ffffff;
 }
-body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: radial-gradient(circle at top, #1a1a1a, #0c0d10);
-  color: #ffffff;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
-
-/* LANDING */
-#landing {
-  text-align: center;
-  max-width: 360px;
-}
-#landing h1 {
-  font-size: 42px;
-  margin-bottom: 32px;
-  color: #E60000; /* Vodafone red */
-}
-#landing button {
-  width: 100%;
-  padding: 16px;
-  font-size: 18px;
-  font-weight: 800;
-  border-radius: 32px;
-  border: none;
-  background: #E60000;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-/* GAME */
-#game {
-  display: none;
-  padding: 16px;
-  width: 100%;
-  max-width: 600px;
-}
-.card {
-  background: #14161a;
-  border: 1px solid #24262b;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-}
-.grid {
-  display: grid;
-  grid-template-columns: repeat(15, 36px);
-  justify-content: center;
-}
-.cell {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #24262b;
-  background: #101217;
-  font-weight: 800;
-  user-select: none;
-}
-</style>
-</head>
-
-<body>
-
-<!-- LANDING SCREEN -->
-<div id="landing">
-  <h1>Team Wordsearch</h1>
-  <button onclick="startGame()">Enter Game</button>
-</div>
-
-<!-- GAME SCREEN -->
-<div id="game">
-  <div class="card">
-    <strong>Wordsearch</strong>
-  </div>
-  <div class="grid" id="grid"></div>
-</div>
-
-<script>
-/* ENTER GAME */
-function startGame() {
-  document.getElementById('landing').style.display = 'none';
-  document.getElementById('game').style.display = 'block';
-  init();
-  render();
-}
-
-/* BASIC WORDSEARCH */
-const WORDS = ["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
-const SIZE = 15;
-let board = [];
-
-function init() {
-  board = Array.from({length: SIZE}, () =>
-    Array.from({length: SIZE}, () => '')
-  );
-  WORDS.forEach(w => placeWord(w));
-  for (let r = 0; r < SIZE; r++) {
-    for (let c = 0; c < SIZE; c++) {
-      if (!board[r][c]) {
-        board[r][c] = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      }
-    }
-  }
-}
-
-function placeWord(word) {
-  const dirs = [[0,1],[1,0],[1,1],[1,-1]];
-  for (let t = 0; t < 400; t++) {
-    const [dr, dc] = dirs[Math.floor(Math.random() * dirs.length)];
-    const r0 = Math.floor(Math.random() * SIZE);
-    const c0 = Math.floor(Math.random() * SIZE);
-    let ok = true;
-    for (let i = 0; i < word.length; i++) {
-      const r = r0 + dr * i;
-      const c = c0 + dc * i;
+*{box-sizing:border-box}
