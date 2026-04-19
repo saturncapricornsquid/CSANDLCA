@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Vodafone Wordsearch</title>
 
 <style>
@@ -30,7 +29,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:10000;
+  z-index:10;
 }
 .welcome-card{text-align:center;max-width:340px}
 .teams{
@@ -62,27 +61,15 @@ body{
 }
 #startGameBtn.enabled{opacity:1}
 
-/* JOINING */
-#joining{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:var(--bg);
-  z-index:9999;
-}
-.spinner{
-  width:44px;height:44px;
-  border:4px solid rgba(255,255,255,.25);
-  border-top-color:var(--red);
-  border-radius:50%;
-  animation:spin .9s linear infinite;
-}
-@keyframes spin{to{transform:rotate(360deg)}}
-
 /* GAME */
 #game{display:none;padding:16px}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+}
 .grid{
   display:grid;
   grid-template-columns:repeat(15,36px);
@@ -95,14 +82,9 @@ body{
   border:1px solid var(--border);
   background:#101217;
   font-weight:800;
+  user-select:none;
 }
-.card{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:12px;
-  margin-bottom:12px;
-}
+.cell.sel{background:#333}
 .leader-row{
   display:flex;
   justify-content:space-between;
@@ -120,7 +102,7 @@ body{
 <div id="playerWelcome">
   <div class="welcome-card">
     <h1>Welcome</h1>
-    <p>Select your team to begin</p>
+    <p>Select your team</p>
     <div class="teams">
       <button class="team-btn" data-team="Red">🔴 Red</button>
       <button class="team-btn" data-team="Blue">🔵 Blue</button>
@@ -128,14 +110,6 @@ body{
       <button class="team-btn" data-team="Yellow">🟡 Yellow</button>
     </div>
     <button id="startGameBtn" disabled>Start Game</button>
-  </div>
-</div>
-
-<!-- JOINING -->
-<div id="joining">
-  <div style="text-align:center">
-    <div class="spinner"></div>
-    <div style="margin-top:16px;font-weight:700">Joining game…</div>
   </div>
 </div>
 
@@ -149,42 +123,36 @@ body{
 </div>
 
 <script>
-const TEAMS={
-  Red:{color:'#E60000',score:0},
-  Blue:{color:'#2563eb',score:0},
-  Green:{color:'#16a34a',score:0},
-  Yellow:{color:'#facc15',score:0}
-};
-
+/* CONFIG */
 const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
 const SIZE=15;
-let board=[];
-let placed=[];
+const TEAMS={
+  Red:{color:"#E60000",score:0},
+  Blue:{color:"#2563eb",score:0},
+  Green:{color:"#16a34a",score:0},
+  Yellow:{color:"#facc15",score:0}
+};
+
 let selectedTeam=null;
+let board=[], placed=[];
+let selecting=false, selCells=[];
 
 /* TEAM SELECT */
-document.querySelectorAll('.team-btn').forEach(btn=>{
-  btn.onclick=()=>{
-    document.querySelectorAll('.team-btn').forEach(b=>b.classList.remove('selected'));
-    btn.classList.add('selected');
-    selectedTeam=btn.dataset.team;
-    const start=document.getElementById('startGameBtn');
-    start.disabled=false;
-    start.classList.add('enabled');
+document.querySelectorAll('.team-btn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.team-btn').forEach(x=>x.classList.remove('selected'));
+    b.classList.add('selected');
+    selectedTeam=b.dataset.team;
+    const s=document.getElementById('startGameBtn');
+    s.disabled=false; s.classList.add('enabled');
   };
 });
 
-/* START */
+/* START GAME */
 document.getElementById('startGameBtn').onclick=()=>{
   document.getElementById('playerWelcome').style.display='none';
-  document.getElementById('joining').style.display='flex';
-  setTimeout(()=>{
-    document.getElementById('joining').style.display='none';
-    document.getElementById('game').style.display='block';
-    init();
-    render();
-    renderLeaderboard();
-  },900);
+  document.getElementById('game').style.display='block';
+  init(); render(); renderLeaderboard();
 };
 
 /* GAME LOGIC */
@@ -195,8 +163,9 @@ function init(){
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
     if(!board[r][c])board[r][c]=String.fromCharCode(65+Math.random()*26);
 }
+
 function placeWord(word){
-  const dirs=[[0,1],[1,0],[1,1]];
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
   for(let t=0;t<400;t++){
     const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
     const r0=Math.floor(Math.random()*SIZE);
@@ -207,9 +176,14 @@ function placeWord(word){
       if(r<0||c<0||r>=SIZE||c>=SIZE){ok=false;break;}
       cells.push([r,c]);
     }
-    if(ok){cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);placed.push({cells,found:false});return;}
+    if(ok){
+      cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);
+      placed.push({word,cells,found:false});
+      return;
+    }
   }
 }
+
 function render(){
   const g=document.getElementById('grid');
   g.innerHTML='';
@@ -218,23 +192,70 @@ function render(){
     d.className='cell';
     d.textContent=board[r][c];
     d.dataset.r=r; d.dataset.c=c;
-    d.onclick=()=>{
-      d.style.background=TEAMS[selectedTeam].color;
-      TEAMS[selectedTeam].score++;
-      renderLeaderboard();
-    };
+    d.onpointerdown=()=>startSelect(r,c);
+    d.onpointerenter=()=>dragSelect(r,c);
+    d.onpointerup=endSelect;
     g.appendChild(d);
   }
 }
+
+function startSelect(r,c){
+  selecting=true;
+  selCells=[[r,c]];
+  highlight();
+}
+
+function dragSelect(r,c){
+  if(!selecting) return;
+  const last=selCells[selCells.length-1];
+  if(last[0]!==r||last[1]!==c) selCells.push([r,c]);
+  highlight();
+}
+
+function endSelect(){
+  selecting=false;
+  const str=selCells.map(p=>board[p[0]][p[1]]).join('');
+  const rev=str.split('').reverse().join('');
+  placed.forEach(w=>{
+    if(!w.found && (str===w.word||rev===w.word)){
+      w.found=true;
+      scoreWord(w.cells);
+    }
+  });
+  clearSel();
+}
+
+function highlight(){
+  clearSel();
+  selCells.forEach(p=>{
+    const el=document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`);
+    if(el) el.classList.add('sel');
+  });
+}
+
+function clearSel(){
+  document.querySelectorAll('.cell').forEach(c=>c.classList.remove('sel'));
+}
+
+function scoreWord(cells){
+  const team=TEAMS[selectedTeam];
+  team.score+=cells.length;
+  cells.forEach(p=>{
+    const el=document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`);
+    if(el){el.style.background=team.color; el.style.color='#fff';}
+  });
+  renderLeaderboard();
+}
+
 function renderLeaderboard(){
-  const wrap=document.getElementById('leaderRows');
-  wrap.innerHTML='';
+  const w=document.getElementById('leaderRows');
+  w.innerHTML='';
   Object.entries(TEAMS)
     .sort((a,b)=>b[1].score-a[1].score)
-    .forEach(([name,t])=>{
-      wrap.innerHTML+=`
+    .forEach(([n,t])=>{
+      w.innerHTML+=`
         <div class="leader-row">
-          <div><span class="dot" style="background:${t.color}"></span>${name}</div>
+          <div><span class="dot" style="background:${t.color}"></span>${n}</div>
           <div>${t.score}</div>
         </div>`;
     });
