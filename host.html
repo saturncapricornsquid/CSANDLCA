@@ -1,54 +1,53 @@
-<!DOCTYPE html><!DOCTYPE html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Team Wordsearch</title>
 
 <style>
-html,body{
-  margin:0;
-  height:100%;
+html, body {
+  margin: 0;
+  height: 100%;
 }
-body{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:radial-gradient(circle at top, #1a1a1a, #0c0d10);
-  color:#fff;
-  font-family:system-ui,Segoe UI,Roboto,Arial;
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #1a1a1a, #0c0d10);
+  color: #ffffff;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
-.wrap{
-  text-align:center;
+.container {
+  text-align: center;
 }
-h1{
-  font-size:56px;
-  margin-bottom:12px;
-  color:#E60000; /* Vodafone red */
+h1 {
+  font-size: 56px;
+  margin-bottom: 12px;
+  color: #E60000;
 }
-p{
-  color:#cfd5d9;
-  font-size:18px;
-  margin-bottom:28px;
+p {
+  font-size: 18px;
+  color: #cfd5d9;
+  margin-bottom: 28px;
 }
-img{
-  width:300px;
-  height:300px;
-  background:#fff;
-  border-radius:20px;
-  box-shadow:0 16px 40px rgba(0,0,0,.55);
+img {
+  width: 300px;
+  height: 300px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.55);
 }
 </style>
 </head>
 
 <body>
-  <div class="wrap">
+  <div class="container">
     <h1>Team Wordsearch</h1>
     <p>Scan the QR code to join the game</p>
-
     <img
       src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://saturncapricornsquid.github.io/CSANDLCA/play.html"
-      alt="QR code to join the game"
-    />
+      alt="QR code to join the game">
   </div>
 </body>
 </html>
-<html lang="en">
