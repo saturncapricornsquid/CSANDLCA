@@ -9,20 +9,64 @@
 
 <style>
 :root{
-  --voda-red:#E60000;
   --bg:#0c0d10;
   --panel:#14161a;
   --border:#24262b;
-  --good:#16a34a;
+  --red:#E60000;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+body{
+  background:var(--bg);
+  color:#fff;
+  font-family:system-ui,Segoe UI,Roboto,Arial;
+}
 
+/* WELCOME */
+#playerWelcome{
+  position:fixed;
+  inset:0;
+  background:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10000;
+}
+.welcome-card{text-align:center;max-width:340px}
+.teams{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:20px 0;
+}
+.team-btn{
+  background:#15171a;
+  border:2px solid #2a2c31;
+  color:#fff;
+  padding:12px;
+  border-radius:14px;
+  font-weight:700;
+}
+.team-btn.selected{
+  border-color:var(--red);
+  background:rgba(230,0,0,.2);
+}
+#startGameBtn{
+  width:100%;
+  background:var(--red);
+  border:none;
+  padding:14px;
+  border-radius:28px;
+  font-weight:800;
+  opacity:.4;
+}
+#startGameBtn.enabled{opacity:1}
+
+/* JOINING */
 #joining{
   position:fixed;
   inset:0;
-  display:flex;
+  display:none;
   align-items:center;
   justify-content:center;
   background:var(--bg);
@@ -31,12 +75,13 @@ body{background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial
 .spinner{
   width:44px;height:44px;
   border:4px solid rgba(255,255,255,.25);
-  border-top-color:var(--voda-red);
+  border-top-color:var(--red);
   border-radius:50%;
   animation:spin .9s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* GAME */
 #game{display:none;padding:16px}
 .grid{
   display:grid;
@@ -47,16 +92,46 @@ body{background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:800;
   border:1px solid var(--border);
   background:#101217;
+  font-weight:800;
 }
-.cell.found{background:var(--good)}
+.card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.leader-row{
+  display:flex;
+  justify-content:space-between;
+  margin:6px 0;
+}
+.dot{
+  width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;
+}
 </style>
 </head>
 
 <body>
 
+<!-- WELCOME -->
+<div id="playerWelcome">
+  <div class="welcome-card">
+    <h1>Welcome</h1>
+    <p>Select your team to begin</p>
+    <div class="teams">
+      <button class="team-btn" data-team="Red">🔴 Red</button>
+      <button class="team-btn" data-team="Blue">🔵 Blue</button>
+      <button class="team-btn" data-team="Green">🟢 Green</button>
+      <button class="team-btn" data-team="Yellow">🟡 Yellow</button>
+    </div>
+    <button id="startGameBtn" disabled>Start Game</button>
+  </div>
+</div>
+
+<!-- JOINING -->
 <div id="joining">
   <div style="text-align:center">
     <div class="spinner"></div>
@@ -64,39 +139,77 @@ body{background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial
   </div>
 </div>
 
+<!-- GAME -->
 <div id="game">
-  <h2>Vodafone Wordsearch</h2>
+  <div class="card">
+    <strong>Leaderboard</strong>
+    <div id="leaderRows"></div>
+  </div>
   <div class="grid" id="grid"></div>
 </div>
 
 <script>
+const TEAMS={
+  Red:{color:'#E60000',score:0},
+  Blue:{color:'#2563eb',score:0},
+  Green:{color:'#16a34a',score:0},
+  Yellow:{color:'#facc15',score:0}
+};
+
 const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
 const SIZE=15;
 let board=[];
+let placed=[];
+let selectedTeam=null;
 
+/* TEAM SELECT */
+document.querySelectorAll('.team-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.team-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedTeam=btn.dataset.team;
+    const start=document.getElementById('startGameBtn');
+    start.disabled=false;
+    start.classList.add('enabled');
+  };
+});
+
+/* START */
+document.getElementById('startGameBtn').onclick=()=>{
+  document.getElementById('playerWelcome').style.display='none';
+  document.getElementById('joining').style.display='flex';
+  setTimeout(()=>{
+    document.getElementById('joining').style.display='none';
+    document.getElementById('game').style.display='block';
+    init();
+    render();
+    renderLeaderboard();
+  },900);
+};
+
+/* GAME LOGIC */
 function init(){
   board=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>''));  
-  WORDS.forEach(w=>place(w));
+  placed=[];
+  WORDS.forEach(w=>placeWord(w));
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
     if(!board[r][c])board[r][c]=String.fromCharCode(65+Math.random()*26);
 }
-
-function place(word){
+function placeWord(word){
   const dirs=[[0,1],[1,0],[1,1]];
   for(let t=0;t<400;t++){
     const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
     const r0=Math.floor(Math.random()*SIZE);
     const c0=Math.floor(Math.random()*SIZE);
-    let ok=true,cells=[];
+    let cells=[],ok=true;
     for(let i=0;i<word.length;i++){
       const r=r0+dr*i,c=c0+dc*i;
       if(r<0||c<0||r>=SIZE||c>=SIZE){ok=false;break;}
       cells.push([r,c]);
     }
-    if(ok){cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);return;}
+    if(ok){cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);placed.push({cells,found:false});return;}
   }
 }
-
 function render(){
   const g=document.getElementById('grid');
   g.innerHTML='';
@@ -104,18 +217,28 @@ function render(){
     const d=document.createElement('div');
     d.className='cell';
     d.textContent=board[r][c];
+    d.dataset.r=r; d.dataset.c=c;
+    d.onclick=()=>{
+      d.style.background=TEAMS[selectedTeam].color;
+      TEAMS[selectedTeam].score++;
+      renderLeaderboard();
+    };
     g.appendChild(d);
   }
 }
-
-init();
-render();
-
-setTimeout(()=>{
-  document.getElementById('joining').style.display='none';
-  document.getElementById('game').style.display='block';
-  setTimeout(()=>window.scrollTo(0,1),0);
-},900);
+function renderLeaderboard(){
+  const wrap=document.getElementById('leaderRows');
+  wrap.innerHTML='';
+  Object.entries(TEAMS)
+    .sort((a,b)=>b[1].score-a[1].score)
+    .forEach(([name,t])=>{
+      wrap.innerHTML+=`
+        <div class="leader-row">
+          <div><span class="dot" style="background:${t.color}"></span>${name}</div>
+          <div>${t.score}</div>
+        </div>`;
+    });
+}
 </script>
 
 </body>
