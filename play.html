@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-<head00;<head>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>Team Wordsearch</title>
+
+<style>
+:root{
+  --bg:#0c0d10;
+  --panel:#14161a;
+  --border:#24262b;
+  --red:#E60000;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -10,8 +21,8 @@ body{
   font-family:system-ui,Segoe UI,Roboto,Arial;
 }
 
-/* WELCOME */
-#welcome{
+/* SCREENS */
+.screen{
   position:fixed;
   inset:0;
   display:flex;
@@ -19,26 +30,16 @@ body{
   justify-content:center;
   background:radial-gradient(circle at top, #1a1a1a, #0c0d10);
   z-index:10;
-}
-.welcome-card{
   text-align:center;
-  max-width:360px;
 }
-.welcome-card h1{
-  font-size:36px;
-  margin-bottom:10px;
-  color:var(--red);
-}
-.welcome-card p{
-  color:#cfd5d9;
-  font-size:16px;
-  margin-bottom:30px;
-}
-#welcome button{
-  width:100%;
+.hidden{display:none}
+
+/* WELCOME */
+h1{color:var(--red)}
+button{
   background:var(--red);
   border:none;
-  padding:16px;
+  padding:16px 28px;
   border-radius:32px;
   font-weight:800;
   font-size:16px;
@@ -46,19 +47,13 @@ body{
 }
 
 /* GAME */
-#game{
-  display:none;
-  padding:16px;
-}
+#game{padding:16px}
 .card{
   background:var(--panel);
   border:1px solid var(--border);
   border-radius:12px;
   padding:12px;
   margin-bottom:12px;
-}
-.card h3{
-  margin:0 0 8px 0;
 }
 input{
   width:100%;
@@ -69,27 +64,14 @@ input{
   color:#fff;
   margin-bottom:8px;
 }
-button{
-  background:var(--red);
-  border:none;
-  padding:10px 14px;
-  border-radius:20px;
-  font-weight:700;
-  color:#fff;
-}
-.player{
-  font-size:14px;
-  color:#cfd5d9;
-  margin:4px 0;
-}
+.player{font-size:14px;color:#cfd5d9}
 .grid{
   display:grid;
   grid-template-columns:repeat(15,36px);
   margin-top:12px;
 }
 .cell{
-  width:36px;
-  height:36px;
+  width:36px;height:36px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -99,22 +81,39 @@ button{
   user-select:none;
 }
 .cell.sel{background:#333}
+.cell.found{background:var(--red);color:#fff}
+
+/* LEADERBOARD */
+.leader-row{
+  display:flex;
+  justify-content:space-between;
+  margin:6px 0;
+}
 </style>
 </head>
 
 <body>
 
 <!-- WELCOME -->
-<div id="welcome">
-  <div class="welcome-card">
+<div id="welcome" class="screen">
+  <div>
     <h1>Welcome</h1>
     <p>Welcome to the Team Wordsearch</p>
     <button id="enterBtn">Enter Game</button>
   </div>
 </div>
 
+<!-- WINNER -->
+<div id="winner" class="screen hidden">
+  <div>
+    <h1>🎉 You Win!</h1>
+    <p id="winnerText"></p>
+    <button onclick="location.reload()">Play Again</button>
+  </div>
+</div>
+
 <!-- GAME -->
-<div id="game">
+<div id="game" class="hidden">
 
   <!-- TEAM SETUP -->
   <div class="card" id="teamSetup">
@@ -122,67 +121,70 @@ button{
     <input id="teamName" placeholder="Team name" />
     <input id="playerName" placeholder="Player name" />
     <button id="addPlayerBtn">Add Player</button>
-
     <div id="players"></div>
-
     <button id="lockTeamBtn" style="margin-top:10px;">Lock Team</button>
   </div>
 
-  <!-- WORDSEARCH -->
+  <!-- LEADERBOARD -->
   <div class="card">
-    <strong>Wordsearch</strong>
+    <strong>Leaderboard</strong>
+    <div id="leaderboard"></div>
   </div>
+
+  <!-- GRID -->
   <div class="grid" id="grid"></div>
 
 </div>
 
 <script>
+/* CONFIG */
+const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
+const SIZE=15;
+
+let board=[], placed=[];
+let selecting=false, selCells=[];
+let teamName="", score=0;
+const players=[];
+
 /* ENTER GAME */
-document.getElementById('enterBtn').onclick=()=>{
-  document.getElementById('welcome').style.display='none';
-  document.getElementById('game').style.display='block';
+enterBtn.onclick=()=>{
+  welcome.classList.add('hidden');
+  game.classList.remove('hidden');
 };
 
 /* TEAM SETUP */
-const players=[];
-document.getElementById('addPlayerBtn').onclick=()=>{
-  const name=document.getElementById('playerName').value.trim();
-  if(!name) return;
-  players.push(name);
-  document.getElementById('playerName').value='';
+addPlayerBtn.onclick=()=>{
+  const p=playerName.value.trim();
+  if(!p) return;
+  players.push(p);
+  playerName.value='';
   renderPlayers();
 };
 
 function renderPlayers(){
-  const wrap=document.getElementById('players');
-  wrap.innerHTML='';
+  playersDiv.innerHTML='';
   players.forEach(p=>{
     const d=document.createElement('div');
     d.className='player';
     d.textContent='• '+p;
-    wrap.appendChild(d);
+    playersDiv.appendChild(d);
   });
 }
 
-document.getElementById('lockTeamBtn').onclick=()=>{
-  const team=document.getElementById('teamName').value.trim();
-  if(!team || players.length===0){
-    alert('Please enter a team name and at least one player');
+lockTeamBtn.onclick=()=>{
+  teamName=teamNameInput.value.trim();
+  if(!teamName||players.length===0){
+    alert('Enter team name and at least one player');
     return;
   }
-  document.getElementById('teamSetup').style.display='none';
-  init();
-  render();
+  teamSetup.style.display='none';
+  init(); render(); renderLeaderboard();
 };
 
 /* WORDSEARCH */
-const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
-const SIZE=15;
-let board=[];
-let selecting=false, selCells=[];
-
 function init(){
   board=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>''));  
+  placed=[];
   WORDS.forEach(w=>placeWord(w));
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
     if(!board[r][c])board[r][c]=String.fromCharCode(65+Math.random()*26);
@@ -194,19 +196,22 @@ function placeWord(word){
     const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
     const r0=Math.floor(Math.random()*SIZE);
     const c0=Math.floor(Math.random()*SIZE);
-    let ok=true,cells=[];
+    let cells=[],ok=true;
     for(let i=0;i<word.length;i++){
       const r=r0+dr*i,c=c0+dc*i;
       if(r<0||c<0||r>=SIZE||c>=SIZE){ok=false;break;}
       cells.push([r,c]);
     }
-    if(ok){cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);return;}
+    if(ok){
+      cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);
+      placed.push({word,cells,found:false});
+      return;
+    }
   }
 }
 
 function render(){
-  const g=document.getElementById('grid');
-  g.innerHTML='';
+  grid.innerHTML='';
   for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
     const d=document.createElement('div');
     d.className='cell';
@@ -215,14 +220,12 @@ function render(){
     d.onpointerdown=()=>startSelect(r,c);
     d.onpointerenter=()=>dragSelect(r,c);
     d.onpointerup=endSelect;
-    g.appendChild(d);
+    grid.appendChild(d);
   }
 }
 
 function startSelect(r,c){
-  selecting=true;
-  selCells=[[r,c]];
-  highlight();
+  selecting=true; selCells=[[r,c]]; highlight();
 }
 function dragSelect(r,c){
   if(!selecting) return;
@@ -232,8 +235,23 @@ function dragSelect(r,c){
 }
 function endSelect(){
   selecting=false;
+  const str=selCells.map(p=>board[p[0]][p[1]]).join('');
+  const rev=str.split('').reverse().join('');
+  placed.forEach(w=>{
+    if(!w.found&&(str===w.word||rev===w.word)){
+      w.found=true;
+      score+=w.word.length;
+      w.cells.forEach(p=>{
+        const el=document.querySelector(`.cell[data-r="${p[0]}"][data-c="${p[1]}"]`);
+        if(el) el.classList.add('found');
+      });
+      renderLeaderboard();
+      checkWin();
+    }
+  });
   clearSel();
 }
+
 function highlight(){
   clearSel();
   selCells.forEach(p=>{
@@ -244,17 +262,37 @@ function highlight(){
 function clearSel(){
   document.querySelectorAll('.cell').forEach(c=>c.classList.remove('sel'));
 }
+
+/* LEADERBOARD */
+function renderLeaderboard(){
+  leaderboard.innerHTML=`
+    <div class="leader-row">
+      <div>${teamName}</div>
+      <div>${score}</div>
+    </div>`;
+}
+
+/* WINNER */
+function checkWin(){
+  if(placed.every(w=>w.found)){
+    game.classList.add('hidden');
+    winner.classList.remove('hidden');
+    winnerText.textContent=`${teamName} wins with ${score} points!`;
+  }
+}
+
+/* DOM refs */
+const welcome=document.getElementById('welcome');
+const game=document.getElementById('game');
+const winner=document.getElementById('winner');
+const winnerText=document.getElementById('winnerText');
+const grid=document.getElementById('grid');
+const leaderboard=document.getElementById('leaderboard');
+const teamSetup=document.getElementById('teamSetup');
+const teamNameInput=document.getElementById('teamName');
+const playerName=document.getElementById('playerName');
+const playersDiv=document.getElementById('players');
 </script>
 
 </body>
 </html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<title>Team Wordsearch</title>
-
-<style>
-:root{
-  --bg:#0c0d10;
-  --panel:#14161a;
-  --border:#24262b;
