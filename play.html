@@ -1,111 +1,117 @@
-<!DOCTYPE html>
-<html lang="enutf-8"><html lang="en">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Team Wordsearch</title>
+<!DOCTYPE html><!DOCTYPE <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Team Wordsearch</title>
 
-<style>
-html, body {
-  margin: 0;
-  height: 100%;
-}
-body {
-  background: radial-gradient(circle at top, #1a1a1a, #0c0d10);
-  color: #ffffff;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
 
-/* LANDING */
-#landing {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#landing .box {
-  text-align: center;
-  width: 300px;
-}
-#landing h1 {
-  font-size: 42px;
-  color: #E60000;
-  margin-bottom: 24px;
-}
-#landing button {
-  width: 100%;
-  padding: 16px;
-  font-size: 18px;
-  font-weight: 800;
-  border-radius: 32px;
-  border: none;
-  background: #E60000;
-  color: #ffffff;
-  cursor: pointer;
-}
+    body {
+      background: radial-gradient(circle at top, #1a1a1a, #0c0d10);
+      color: #ffffff;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
 
-/* GAME */
-#game {
-  display: none;
-  padding: 20px;
-  text-align: center;
-}
-.grid {
-  display: grid;
-  grid-template-columns: repeat(8, 40px);
-  gap: 6px;
-  justify-content: center;
-  margin-top: 20px;
-}
-.cell {
-  width: 40px;
-  height: 40px;
-  background: #101217;
-  border: 1px solid #24262b;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-}
-</style>
+    /* LANDING */
+    #landing {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #landing .box {
+      text-align: center;
+      width: 300px;
+    }
+
+    #landing h1 {
+      font-size: 42px;
+      color: #E60000;
+      margin-bottom: 24px;
+    }
+
+    #landing button {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 32px;
+      border: none;
+      background: #E60000;
+      color: #ffffff;
+      cursor: pointer;
+    }
+
+    /* GAME */
+    #game {
+      display: none;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 40px);
+      gap: 6px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .cell {
+      width: 40px;
+      height: 40px;
+      background: #101217;
+      border: 1px solid #24262b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      user-select: none;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- LANDING SCREEN -->
-<div id="landing">
-  <div class="box">
-    <h1>Team Wordsearch</h1>
-    <button onclick="enterGame()">Enter Game</button>
+  <!-- LANDING -->
+  <div id="landing">
+    <div class="box">
+      <h1>Team Wordsearch</h1>
+      <button onclick="enterGame()">Enter Game</button>
+    </div>
   </div>
-</div>
 
-<!-- GAME SCREEN -->
-<div id="game">
-  <h2>Wordsearch</h2>
-  <div class="grid" id="grid"></div>
-</div>
+  <!-- GAME -->
+  <div id="game">
+    <h2>Wordsearch</h2>
+    <div class="grid" id="grid"></div>
+  </div>
 
-<script>
-function enterGame() {
-  document.getElementById("landing").style.display = "none";
-  document.getElementById("game").style.display = "block";
-  buildGrid();
-}
+  <script>
+    function enterGame() {
+      document.getElementById("landing").style.display = "none";
+      document.getElementById("game").style.display = "block";
+      buildGrid();
+    }
 
-function buildGrid() {
-  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const grid = document.getElementById("grid");
-  grid.innerHTML = "";
+    function buildGrid() {
+      const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const grid = document.getElementById("grid");
+      grid.innerHTML = "";
 
-  for (let i = 0; i < 64; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    cell.textContent = letters[Math.floor(Math.random() * letters.length)];
-    grid.appendChild(cell);
-  }
-}
-</script>
+      for (let i = 0; i < 64; i++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        cell.textContent = letters[Math.floor(Math.random() * letters.length)];
+        grid.appendChild(cell);
+      }
+    }
+  </script>
 
 </body>
 </html>
-
+<html lang="en">
 <head>
