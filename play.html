@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Vodafone Wordsearch</title>
+
+<style>
+:root{
+  --voda-red:#E60000;
+  --bg:#0c0d10;
+  --panel:#14161a;
+  --border:#24262b;
+  --good:#16a34a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:#fff;font-family:system-ui,Segoe UI,Roboto,Arial}
+
+#joining{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:var(--bg);
+  z-index:9999;
+}
+.spinner{
+  width:44px;height:44px;
+  border:4px solid rgba(255,255,255,.25);
+  border-top-color:var(--voda-red);
+  border-radius:50%;
+  animation:spin .9s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#game{display:none;padding:16px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(15,36px);
+}
+.cell{
+  width:36px;height:36px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:800;
+  border:1px solid var(--border);
+  background:#101217;
+}
+.cell.found{background:var(--good)}
+</style>
+</head>
+
+<body>
+
+<div id="joining">
+  <div style="text-align:center">
+    <div class="spinner"></div>
+    <div style="margin-top:16px;font-weight:700">Joining game…</div>
+  </div>
+</div>
+
+<div id="game">
+  <h2>Vodafone Wordsearch</h2>
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const WORDS=["CORE","SITETRACKER","ALLOCATION","NCT","DELIVERY","LCA","CRQ","AUDIT"];
+const SIZE=15;
+let board=[];
+
+function init(){
+  board=Array.from({length:SIZE},()=>Array.from({length:SIZE},()=>''));  
+  WORDS.forEach(w=>place(w));
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++)
+    if(!board[r][c])board[r][c]=String.fromCharCode(65+Math.random()*26);
+}
+
+function place(word){
+  const dirs=[[0,1],[1,0],[1,1]];
+  for(let t=0;t<400;t++){
+    const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
+    const r0=Math.floor(Math.random()*SIZE);
+    const c0=Math.floor(Math.random()*SIZE);
+    let ok=true,cells=[];
+    for(let i=0;i<word.length;i++){
+      const r=r0+dr*i,c=c0+dc*i;
+      if(r<0||c<0||r>=SIZE||c>=SIZE){ok=false;break;}
+      cells.push([r,c]);
+    }
+    if(ok){cells.forEach((p,i)=>board[p[0]][p[1]]=word[i]);return;}
+  }
+}
+
+function render(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
+    const d=document.createElement('div');
+    d.className='cell';
+    d.textContent=board[r][c];
+    g.appendChild(d);
+  }
+}
+
+init();
+render();
+
+setTimeout(()=>{
+  document.getElementById('joining').style.display='none';
+  document.getElementById('game').style.display='block';
+  setTimeout(()=>window.scrollTo(0,1),0);
+},900);
+</script>
+
+</body>
+</html>
